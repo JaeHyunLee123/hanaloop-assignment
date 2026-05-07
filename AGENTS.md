@@ -77,17 +77,7 @@ When creating a new file:
 
 Why: agents read files selectively, not whole codebases. A one-line Korean header gives instant context so the next session (human or agent) can navigate without re-reading the entire file.
 
-## 7. Plan + Checklist + Context Notes
-
-**Before any non-trivial task, produce three artifacts. Don't start coding without them.**
-
-- **Plan** — what we're building and why.
-- **Checklist** (`checklist.md`) — concrete tasks as checkboxes. Tick as you go.
-- **Context Notes** (`context-notes.md`) — decisions made during the work and the reasoning behind them. Append continuously.
-
-If the user gives only a plan and asks you to start coding, stop and ask: "Should I create the checklist and context notes first?" The next session — yours or someone else's — needs the notes to pick up where you left off without re-deriving every decision.
-
-## 8. Run Tests Before Marking Complete
+## 7. Run Tests Before Marking Complete
 
 **If you touched code, run the tests before saying "done".**
 
@@ -98,7 +88,7 @@ If the user gives only a plan and asks you to start coding, stop and ask: "Shoul
 
 This is the step LLMs skip most often. Treat it as non-negotiable.
 
-## 9. Semantic Commits
+## 8. Semantic Commits
 
 **Commit when one logical change is complete. Don't wait for the user to ask.**
 
@@ -109,7 +99,7 @@ This is the step LLMs skip most often. Treat it as non-negotiable.
 
 Note: For solo prototypes or throwaway scripts, group commits loosely if it slows you down. The point is reversibility, not ceremony.
 
-## 10. Read Errors, Don't Guess
+## 9. Read Errors, Don't Guess
 
 **Read the actual error/log line. Don't pattern-match from memory.**
 
@@ -125,9 +115,6 @@ This is the step LLMs skip most often after "run tests". They guess from error k
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
-
-## 개발 시 참고해야하는 문서들
-- 개발 시 항상 @./docs/implementation_plans.md 및 이 문서에 링크된 문서 참고
 
 ## 개발 시 사용해야하는 스킬들
 
