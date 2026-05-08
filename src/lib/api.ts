@@ -99,6 +99,14 @@ export async function submitEmissions(payload: { actionType: string; quantity: n
 
 import { EMISSION_FACTORS, BOM } from "./constants";
 
+const PCF_STAGE_NAMES: Record<number, string> = {
+  1: "1단계: 원자재 생산 및 조달",
+  2: "2단계: 제조 및 가공",
+  3: "3단계: 유통 및 물류",
+  4: "4단계: 제품 사용",
+  5: "5단계: 제품 폐기",
+};
+
 export async function getDashboardStats() {
   await delay(jitter());
 
@@ -106,6 +114,7 @@ export async function getDashboardStats() {
   const scopeMap = new Map<number, number>();
   const companyMap = new Map<string, number>();
   const stageMap = new Map<number, number>();
+  const monthlyMap = new Map<string, number>();
 
   for (const company of _companies) {
     let companyTotal = 0;
@@ -115,6 +124,9 @@ export async function getDashboardStats() {
 
       scopeMap.set(e.scope, (scopeMap.get(e.scope) || 0) + e.emissions);
       stageMap.set(e.pcfStage, (stageMap.get(e.pcfStage) || 0) + e.emissions);
+      
+      const key = e.yearMonth;
+      monthlyMap.set(key, (monthlyMap.get(key) || 0) + e.emissions);
     }
     companyMap.set(company.name, companyTotal);
   }
@@ -136,11 +148,30 @@ export async function getDashboardStats() {
     + EMISSION_FACTORS.PRODUCT_USE_PER_UNIT
     + EMISSION_FACTORS.PRODUCT_DISPOSAL_PER_UNIT;
 
+  // Ordered Stages
+  const emissionsByPcfStage = Array.from(stageMap.entries())
+    .sort(([k1], [k2]) => k1 - k2)
+    .map(([k, v]) => ({ name: PCF_STAGE_NAMES[k] || `Stage ${k}`, value: v }));
+
+  // Last 12 months
+  const now = new Date();
+  const emissionsByMonth = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const key = `${y}-${m}`;
+    emissionsByMonth.push({ name: key, value: monthlyMap.get(key) || 0 });
+  }
+
   return {
     totalEmissions,
-    emissionsByScope: Array.from(scopeMap.entries()).map(([k, v]) => ({ name: `Scope ${k}`, value: v })),
+    emissionsByScope: Array.from(scopeMap.entries())
+      .sort(([k1], [k2]) => k1 - k2)
+      .map(([k, v]) => ({ name: `Scope ${k}`, value: v })),
     emissionsByCompany: Array.from(companyMap.entries()).map(([k, v]) => ({ name: k, value: v })),
-    emissionsByPcfStage: Array.from(stageMap.entries()).map(([k, v]) => ({ name: `Stage ${k}`, value: v })),
+    emissionsByPcfStage,
+    emissionsByMonth,
     cradleToGatePcf,
     cradleToGravePcf,
   };

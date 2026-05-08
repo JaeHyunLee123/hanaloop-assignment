@@ -11,7 +11,9 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line
 } from "recharts";
 
 interface DashboardStats {
@@ -19,6 +21,7 @@ interface DashboardStats {
   emissionsByScope: { name: string; value: number }[];
   emissionsByCompany: { name: string; value: number }[];
   emissionsByPcfStage: { name: string; value: number }[];
+  emissionsByMonth: { name: string; value: number }[];
   cradleToGatePcf: number;
   cradleToGravePcf: number;
 }
@@ -137,6 +140,28 @@ export default function DashboardPage() {
                 />
                 <Bar dataKey="value" fill="#8ab4f8" radius={[4, 4, 0, 0]} />
               </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Monthly Emissions Chart */}
+        <div className="bg-surface rounded-xl p-6 border border-border h-96 flex flex-col lg:col-span-2">
+          <h3 className="text-lg font-medium text-foreground mb-4">Monthly Emissions (Last 12 Months)</h3>
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data.emissionsByMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2f3b33" vertical={false} />
+                <XAxis dataKey="name" stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
+                <YAxis stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: "#1c241f", borderColor: "#2f3b33", color: "#e8edea" }}
+                  formatter={(value: unknown) => {
+                    const num = typeof value === "number" ? value : Number(value);
+                    return [`${num.toFixed(2)} tCO2e`, "Emissions"];
+                  }}
+                />
+                <Line type="monotone" dataKey="value" stroke="#e9c46a" strokeWidth={3} dot={{ r: 4, fill: "#e9c46a" }} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
