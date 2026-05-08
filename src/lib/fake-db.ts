@@ -1,5 +1,6 @@
 // 페이크 인메모리 DB: 고정 6개 회사, 더미 배출 및 포스트 데이터
 import { Company, ExtendedGhgEmission, Post } from "@/types/base-types";
+import { buildPostContent } from "@/lib/post-content-builder";
 
 // --- 고정 6개 Company ---
 const COMPANY_KENDER: Company = {
@@ -176,20 +177,18 @@ function generatePosts(): Post[] {
   let postId = 1;
 
   for (const company of companies) {
-    // 각 회사별로 3개월에 1건씩 Post 생성
-    for (let i = 0; i < yearMonths.length; i += 3) {
-      const ym = yearMonths[i];
-      const totalEmissions = company.emissions
-        .filter((e) => e.yearMonth === ym)
-        .reduce((sum, e) => sum + e.emissions, 0)
-        .toFixed(2);
+    for (const ym of yearMonths) {
+      const monthEmissions = company.emissions.filter(
+        (e) => e.yearMonth === ym
+      );
+      const quantity = Math.floor(rand() * 20 + 5);
 
       result.push({
         id: `post-${postId++}`,
         title: `${company.name} ${ym} 통합 배출 이력`,
         resourceUid: company.id,
         dateTime: ym,
-        content: `기타 ${Math.floor(rand() * 20 + 5)}대 생산, ${totalEmissions}tCO2e 배출`,
+        content: buildPostContent(company, monthEmissions, quantity),
       });
     }
   }
