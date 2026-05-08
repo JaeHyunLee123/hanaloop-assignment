@@ -4,6 +4,11 @@ export type GhgEmission = {
   emissions: number; // tons of CO2 equivalent
 };
 
+export type ExtendedGhgEmission = GhgEmission & {
+  scope: 1 | 2 | 3;
+  pcfStage: 1 | 2 | 3 | 4 | 5;
+};
+
 export type Country = {
   name: string;
   code: string;
@@ -13,7 +18,7 @@ export type Company = {
   id: string;
   name: string;
   country: string; // Country.code
-  emissions: GhgEmission[];
+  emissions: ExtendedGhgEmission[];
 }
 
 export type Post = {
