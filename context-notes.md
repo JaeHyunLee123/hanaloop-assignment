@@ -25,3 +25,11 @@
   - Post의 content 형식은 "기타 N대 생산, X.XXtCO2e 배출" 패턴으로 확정함.
   - 과제에서 제공된 `lib/api.ts` 코드(delay, jitter, maybeFail 포함)를 그대로 적용함.
   - Vitest 11개 테스트 작성 및 전체 통과 확인 (fake-db 무결성 7건 + API 함수 동작 4건).
+- **2026-05-08 (Phase 2 구현 완료)**:
+  - 배출계수 상수값은 인터넷 조사(IPCC 2006, 환경부 GIR 2023, DEFRA, GLEC Framework 등) 기반으로 설정하고 출처를 주석으로 명시함.
+  - 한국 전력 배출계수: 0.4173 tCO2eq/MWh (환경부/온실가스종합정보센터 2023년 공표치).
+  - 계산 함수 4개 구현: `processGuitarProduction`, `processDeliveryDistance`, `processPickupImport`, `processGuitarStringImport`.
+  - 반환 타입은 `Map<string, ExtendedGhgEmission[]>`로 확정. key는 companyId, value는 해당 회사에 할당할 emission 배열.
+  - `mergeEmissions` 함수: `yearMonth`, `source`, `scope`, `pcfStage` 4개 키가 모두 일치할 때만 합산. 원본 불변(immutable).
+  - 마이너스(-) 입력은 동일한 파이프라인을 통과하여 음수 emission을 생성하고, mergeEmissions로 기존 값에서 차감됨.
+  - 전체 테스트 37개 (Phase 1: 11개 + Phase 2: 26개) 모두 통과 확인.

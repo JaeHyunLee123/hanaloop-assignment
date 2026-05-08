@@ -15,3 +15,7 @@
 - [x] **Phase 1**: Next.js Route Handlers (app/api/companies, app/api/posts)
 - [x] **Phase 1**: TDD 검증 테스트 11개 작성 및 통과 (fake-db 무결성 + API 함수 동작)
 - [x] **Phase 1**: 빌드 통과 확인
+- [x] **Phase 2**: 배출계수 상수 정의 (`lib/constants.ts` - 인터넷 조사 기반, 출처 주석 포함)
+- [x] **Phase 2**: 배출량 계산 테스트 26개 작성 (RED)
+- [x] **Phase 2**: 핵심 비즈니스 로직 구현 (`lib/emissions-calculator.ts` - GREEN)
+- [x] **Phase 2**: 전체 테스트 37개 통과 확인
