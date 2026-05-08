@@ -10,8 +10,8 @@
 ## 2. 기본 타입 및 페이크 DB 설정
 * `src/types/base-types.ts`에 확정된 타입(`ExtendedGhgEmission`, `Company`, `Post`, `Country`) 정의
 * `lib/fake-db.ts` (또는 시드 데이터 파일) 생성:
-  * 고정된 6개의 `Company` 객체 초기화 (Kender, 공급사, 운송사)
-  * 초기 `Country` 데이터 셋업
+  * 고정된 6개의 `Company` 객체 초기화 (Kender, 중국기타줄회사, 인도네시아픽업회사, 중국수입회사, 인도네시아수입회사, 국내운송회사)
+  * 2025-01부터 2026-04까지의 emission 및 post 더미 데이터 생성
 * `lib/api.ts` 작성:
   * 요구사항에서 제공된 지연(delay) 및 실패(jitter, maybeFail) 로직 적용
   * `fetchCountries`, `fetchCompanies`, `fetchPosts`, `createOrUpdatePost` 등 모의 함수 구현
@@ -23,3 +23,7 @@
 
 ## 4. TDD 및 검증
 * `lib/api.ts`의 모의 함수들이 예상대로 작동하는지 Vitest로 간단한 단위 테스트 작성 및 통과 확인
+* 더미 데이터의 검증 테스트 작성 및 통과
+  * GhgEmission의 yearMonth와 Post의 dataTime 형식 검사 ("YYYY-MM")
+  * Company의 country가 countries 더미 데이터에 실제로 있는지 검사
+  * Post의 resourceUid가 companies 더미 데이터에 실제로 있는지 검사
