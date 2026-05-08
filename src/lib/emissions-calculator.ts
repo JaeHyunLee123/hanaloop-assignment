@@ -1,6 +1,7 @@
 // 탄소 배출량 자동 계산 및 Company별 분산 할당 핵심 비즈니스 로직
 import { ExtendedGhgEmission } from "@/types/base-types";
 import { EMISSION_FACTORS, COMPANY_IDS } from "@/lib/constants";
+import { roundTo4 } from "@/lib/utils";
 
 /**
  * ExtendedGhgEmission 객체를 생성하는 헬퍼
@@ -16,7 +17,7 @@ function createEmission(
     source: "",
     scope,
     pcfStage,
-    emissions: Math.round(emissions * 10000) / 10000,
+    emissions: roundTo4(emissions),
   };
 }
 

@@ -9,13 +9,9 @@ import {
 } from "@/lib/emissions-calculator";
 import { EMISSION_FACTORS, COMPANY_IDS } from "@/lib/constants";
 import { ExtendedGhgEmission } from "@/types/base-types";
+import { roundTo4 } from "@/lib/utils";
 
 const YM = "2026-05";
-
-// 부동소수점 비교용 헬퍼
-function roundTo4(n: number): number {
-  return Math.round(n * 10000) / 10000;
-}
 
 describe("emissions-calculator", () => {
   // ─── 2.1. 기타 생산량 입력 ───
