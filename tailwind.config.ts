@@ -8,9 +8,22 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        primary: "var(--primary)",
+        secondary: "var(--secondary)",
+        surface: "var(--surface)",
+        "surface-hover": "var(--surface-hover)",
+        border: "var(--border)",
+        danger: "var(--danger)",
+        warning: "var(--warning)",
+      },
+      borderRadius: {
+        lg: "8px",
       },
     },
   },

@@ -1,7 +1,7 @@
 // 지연, 실패 시뮬레이션이 포함된 페이크 API 함수
 import { countries } from "@/data/country-data";
 import { companies, posts } from "@/lib/fake-db";
-import { Post } from "@/types/base-types";
+import { Post, ExtendedGhgEmission } from "@/types/base-types";
 
 const _countries = [...countries];
 const _companies = [...companies];
@@ -38,4 +38,110 @@ export async function createOrUpdatePost(
   const created = { ...p, id: crypto.randomUUID() };
   _posts = [..._posts, created];
   return created;
+}
+
+import {
+  processGuitarProduction,
+  processDeliveryDistance,
+  processPickupImport,
+  processGuitarStringImport,
+  mergeEmissions
+} from "./emissions-calculator";
+import { buildPostContent } from "./post-content-builder";
+
+export async function submitEmissions(payload: { actionType: string; quantity: number; yearMonth: string }) {
+  await delay(jitter());
+  if (maybeFail()) throw new Error("Save failed");
+
+  let map: Map<string, ExtendedGhgEmission[]>;
+  switch (payload.actionType) {
+    case "guitar_production":
+      map = processGuitarProduction(payload.quantity, payload.yearMonth);
+      break;
+    case "delivery":
+      map = processDeliveryDistance(payload.quantity, payload.yearMonth);
+      break;
+    case "pickup_import":
+      map = processPickupImport(payload.quantity, payload.yearMonth);
+      break;
+    case "string_import":
+      map = processGuitarStringImport(payload.quantity, payload.yearMonth);
+      break;
+    default:
+      throw new Error("Invalid actionType");
+  }
+
+  const newPosts: Post[] = [];
+
+  for (const [companyId, newEmissions] of Array.from(map.entries())) {
+    const company = _companies.find((c) => c.id === companyId);
+    if (company) {
+      for (const e of newEmissions) {
+        company.emissions = mergeEmissions(company.emissions, e);
+      }
+      
+      const content = buildPostContent(company, newEmissions, payload.quantity);
+      const post: Post = {
+        id: crypto.randomUUID(),
+        title: `${company.name} ${payload.yearMonth} 배출 이력`,
+        resourceUid: company.id,
+        dateTime: payload.yearMonth,
+        content,
+      };
+      
+      _posts = [..._posts, post];
+      newPosts.push(post);
+    }
+  }
+
+  return newPosts;
+}
+
+import { EMISSION_FACTORS, BOM } from "./constants";
+
+export async function getDashboardStats() {
+  await delay(jitter());
+
+  let totalEmissions = 0;
+  const scopeMap = new Map<number, number>();
+  const companyMap = new Map<string, number>();
+  const stageMap = new Map<number, number>();
+
+  for (const company of _companies) {
+    let companyTotal = 0;
+    for (const e of company.emissions) {
+      totalEmissions += e.emissions;
+      companyTotal += e.emissions;
+
+      scopeMap.set(e.scope, (scopeMap.get(e.scope) || 0) + e.emissions);
+      stageMap.set(e.pcfStage, (stageMap.get(e.pcfStage) || 0) + e.emissions);
+    }
+    companyMap.set(company.name, companyTotal);
+  }
+
+  // Calculate static PCF per unit
+  const stringStage1 = EMISSION_FACTORS.GUITAR_STRING_PRODUCTION_PER_UNIT * BOM.GUITAR_STRINGS_PER_GUITAR;
+  const pickupStage1 = EMISSION_FACTORS.PICKUP_PRODUCTION_PER_UNIT * BOM.PICKUPS_PER_GUITAR;
+  const kenderStage2 = EMISSION_FACTORS.PRODUCTION_FOSSIL_FUEL_PER_UNIT + EMISSION_FACTORS.PRODUCTION_ELECTRICITY_PER_UNIT;
+
+  const cradleToGatePcf = stringStage1 + pickupStage1 + kenderStage2;
+
+  const stringStage3 = (EMISSION_FACTORS.GUITAR_STRING_INTL_SHIPPING_PER_UNIT + EMISSION_FACTORS.GUITAR_STRING_DOMESTIC_SHIPPING_PER_UNIT) * BOM.GUITAR_STRINGS_PER_GUITAR;
+  const pickupStage3 = (EMISSION_FACTORS.PICKUP_INTL_SHIPPING_PER_UNIT + EMISSION_FACTORS.PICKUP_DOMESTIC_SHIPPING_PER_UNIT) * BOM.PICKUPS_PER_GUITAR;
+  
+  const cradleToGravePcf = cradleToGatePcf 
+    + stringStage3 
+    + pickupStage3 
+    + EMISSION_FACTORS.CONSUMER_DELIVERY_PER_UNIT
+    + EMISSION_FACTORS.PRODUCT_USE_PER_UNIT
+    + EMISSION_FACTORS.PRODUCT_DISPOSAL_PER_UNIT;
+
+  return {
+    totalEmissions,
+    emissionsByScope: Array.from(scopeMap.entries()).map(([k, v]) => ({ name: `Scope ${k}`, value: v })),
+    emissionsByCompany: Array.from(companyMap.entries()).map(([k, v]) => ({ name: k, value: v })),
+    emissionsByPcfStage: Array.from(stageMap.entries()).map(([k, v]) => ({ name: `Stage ${k}`, value: v })),
+    cradleToGatePcf,
+    cradleToGravePcf,
+  };
 }

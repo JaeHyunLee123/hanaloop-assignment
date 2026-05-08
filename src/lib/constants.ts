@@ -41,6 +41,11 @@ export const EMISSION_FACTORS = {
   // 가정: 기타 1대 약 4kg, 평균 적재율 고려
   // MVP 단순화: km당 고정 배출계수
   DELIVERY_PER_KM: 0.00021, // tCO2e/km
+  
+  // 과거 데이터 기반 평균 예상 배송 거리
+  AVERAGE_DELIVERY_DISTANCE_PER_UNIT: 50, // km/대
+  // 소비자 배송 1대당 배출계수 (거리 * 계수)
+  CONSUMER_DELIVERY_PER_UNIT: 50 * 0.00021, // tCO2e/대
 
   // ─── 부품 생산 배출계수 (Scope 3, 1단계) ───
   // 기타줄 1세트 생산 시 Cradle-to-gate 배출계수

@@ -1,101 +1,147 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useQuery } from "@tanstack/react-query";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
+
+interface DashboardStats {
+  totalEmissions: number;
+  emissionsByScope: { name: string; value: number }[];
+  emissionsByCompany: { name: string; value: number }[];
+  emissionsByPcfStage: { name: string; value: number }[];
+  cradleToGatePcf: number;
+  cradleToGravePcf: number;
+}
+
+const COLORS = ["#4edea3", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#8ab4f8"];
+
+export default function DashboardPage() {
+  const { data, isLoading, error } = useQuery<DashboardStats>({
+    queryKey: ["dashboard-stats"],
+    queryFn: async () => {
+      const res = await fetch("/api/dashboard-stats");
+      if (!res.ok) throw new Error("Failed to fetch dashboard stats");
+      return res.json();
+    },
+  });
+
+  if (isLoading) return <div className="p-8 text-foreground">Loading dashboard...</div>;
+  if (error || !data) return <div className="p-8 text-red-400">Error loading dashboard</div>;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="p-8 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Kender Dashboard</h1>
+        <p className="text-gray-400 mt-2">Comprehensive carbon emission analytics</p>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Top Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-surface rounded-xl p-6 border border-border">
+          <h3 className="text-sm font-medium text-gray-400">Total Emissions</h3>
+          <p className="text-3xl font-bold text-primary mt-2">{data.totalEmissions.toFixed(2)} tCO2e</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="bg-surface rounded-xl p-6 border border-border">
+          <h3 className="text-sm font-medium text-gray-400">Cradle to Gate PCF</h3>
+          <p className="text-3xl font-bold text-primary mt-2">{data.cradleToGatePcf.toFixed(4)} tCO2e/unit</p>
+        </div>
+        <div className="bg-surface rounded-xl p-6 border border-border">
+          <h3 className="text-sm font-medium text-gray-400">Cradle to Grave PCF</h3>
+          <p className="text-3xl font-bold text-primary mt-2">{data.cradleToGravePcf.toFixed(4)} tCO2e/unit</p>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* Scope Chart */}
+        <div className="bg-surface rounded-xl p-6 border border-border h-96 flex flex-col">
+          <h3 className="text-lg font-medium text-foreground mb-4">Emissions by Scope</h3>
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data.emissionsByScope}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                >
+                  {data.emissionsByScope.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: "#1c241f", borderColor: "#2f3b33", color: "#e8edea" }}
+                  formatter={(value: unknown) => {
+                    const num = typeof value === "number" ? value : Number(value);
+                    return [`${num.toFixed(2)} tCO2e`, "Emissions"];
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Company Chart */}
+        <div className="bg-surface rounded-xl p-6 border border-border h-96 flex flex-col">
+          <h3 className="text-lg font-medium text-foreground mb-4">Emissions by Company</h3>
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.emissionsByCompany} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2f3b33" vertical={false} />
+                <XAxis dataKey="name" stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
+                <YAxis stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: "#1c241f", borderColor: "#2f3b33", color: "#e8edea" }}
+                  formatter={(value: unknown) => {
+                    const num = typeof value === "number" ? value : Number(value);
+                    return [`${num.toFixed(2)} tCO2e`, "Emissions"];
+                  }}
+                />
+                <Bar dataKey="value" fill="#4edea3" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* PCF Stage Chart */}
+        <div className="bg-surface rounded-xl p-6 border border-border h-96 flex flex-col lg:col-span-2">
+          <h3 className="text-lg font-medium text-foreground mb-4">Emissions by Lifecycle Stage</h3>
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.emissionsByPcfStage} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2f3b33" vertical={false} />
+                <XAxis dataKey="name" stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
+                <YAxis stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: "#1c241f", borderColor: "#2f3b33", color: "#e8edea" }}
+                  formatter={(value: unknown) => {
+                    const num = typeof value === "number" ? value : Number(value);
+                    return [`${num.toFixed(2)} tCO2e`, "Emissions"];
+                  }}
+                />
+                <Bar dataKey="value" fill="#8ab4f8" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
