@@ -27,7 +27,8 @@ export const EMISSION_FACTORS = {
   // 가정: 100W 앰프, 하루 1시간, 10년 수명 → 365kWh/년 × 10년 = 3,650kWh
   // 출처: 한국 전력 배출계수 0.4173 kgCO2e/kWh (GIR 2023)
   // 계산: 3,650kWh × 0.0004173 tCO2e/kWh = 1.523 tCO2e
-  PRODUCT_USE_PER_UNIT: 1.523, // tCO2e/대
+  // 2026/05/09 수정: 위 사용량은 앰프의 사용량이지 전기기타의 사용량이 아니다. 전기기타 자체는 전력을 사용하지 않아서 0으로 조정
+  PRODUCT_USE_PER_UNIT: 0, // tCO2e/대
 
   // ─── Scope 3, 5단계: 제품 폐기 ───
   // 전기기타 폐기 시 WEEE 처리 배출계수
