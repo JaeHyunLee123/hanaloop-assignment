@@ -211,12 +211,13 @@ describe("emissions-calculator", () => {
 
   // ─── 2.4. 마이너스(-) 차감 입력 ───
   describe("마이너스 입력 (Rollback)", () => {
-    it("생산량 음수 입력 시 배출량이 음수로 산정되어야 한다", () => {
+    it("생산량 음수 입력 시 배출량이 음수 또는 0으로 산정되어야 한다", () => {
       const result = processGuitarProduction(-5, YM);
       const kenderEmissions = result.get(COMPANY_IDS.KENDER)!;
 
       for (const e of kenderEmissions) {
-        expect(e.emissions).toBeLessThan(0);
+        // 배출계수가 0인 경우(예: PRODUCT_USE_PER_UNIT) 0이 될 수 있음
+        expect(e.emissions).toBeLessThanOrEqual(0);
       }
     });
 
