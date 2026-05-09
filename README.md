@@ -23,7 +23,9 @@ https://hanaloop-assignment-nu.vercel.app/
 ## 📄 프로젝트 설명 문서
 - 원활한 프로젝트 이해를 위해 설명 문서를 먼저 읽는것을 권장드립니다.
 
-[하나루프 과제 소개 - 이재현.pdf](https://github.com/user-attachments/files/27545669/-.pdf)
+[하나루프 과제 소개 pdf 다운로드](https://github.com/user-attachments/files/27545669/-.pdf)
+
+[하나루프 과제 소개 pdf 웹에서 읽기](https://github.com/JaeHyunLee123/hanaloop-assignment/blob/main/%E1%84%92%E1%85%A1%E1%84%82%E1%85%A1%E1%84%85%E1%85%AE%E1%84%91%E1%85%B3%20%E1%84%80%E1%85%AA%E1%84%8C%E1%85%A6%20%E1%84%89%E1%85%A9%E1%84%80%E1%85%A2%20-%20%E1%84%8B%E1%85%B5%E1%84%8C%E1%85%A2%E1%84%92%E1%85%A7%E1%86%AB.pdf)
 
 ## 🎬 프로젝트 시연 영상
 
