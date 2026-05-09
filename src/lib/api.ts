@@ -1,17 +1,8 @@
 // 지연, 실패 시뮬레이션이 포함된 페이크 API 함수
 import { countries } from "@/data/country-data";
 import { companies, posts } from "@/lib/fake-db";
-import { Post, ExtendedGhgEmission } from "@/types/base-types";
-
-import {
-  processGuitarProduction,
-  processDeliveryDistance,
-  processPickupImport,
-  processGuitarStringImport,
-  mergeEmissions
-} from "./emissions-calculator";
-import { buildPostContent } from "./post-content-builder";
-
+import { Post } from "@/types/base-types";
+import { EMISSION_FACTORS, BOM } from "./constants";
 import { applyEmissions, EmissionPayload } from "./emission-service";
 
 const _countries = [...countries];
@@ -58,7 +49,7 @@ export async function submitEmissions(payload: EmissionPayload) {
   return applyEmissions(_companies, _posts, payload);
 }
 
-import { EMISSION_FACTORS, BOM } from "./constants";
+
 
 const PCF_STAGE_NAMES: Record<number, string> = {
   1: "1단계: 원자재 생산 및 조달",
