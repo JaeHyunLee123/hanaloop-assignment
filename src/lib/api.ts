@@ -80,16 +80,25 @@ export async function submitEmissions(payload: { actionType: string; quantity: n
         company.emissions = mergeEmissions(company.emissions, e);
       }
       
+      let post:Post;
       const content = buildPostContent(company, newEmissions, payload.quantity);
-      const post: Post = {
-        id: crypto.randomUUID(),
-        title: `${company.name} ${payload.yearMonth} 배출 이력`,
-        resourceUid: company.id,
-        dateTime: payload.yearMonth,
-        content,
-      };
       
-      _posts = [..._posts, post];
+      const existingPosts = _posts.filter((post) => post.resourceUid === company.id && post.dateTime === payload.yearMonth)
+      
+      if(existingPosts.length > 0){
+        post = existingPosts[0]    
+        post.content = `${post.content}\n${content}`;
+      }else {
+        post = {
+          id: crypto.randomUUID(),
+          title: `${company.name} ${payload.yearMonth} 배출 이력`,
+          resourceUid: company.id,
+          dateTime: payload.yearMonth,
+          content,
+        };
+
+        _posts = [..._posts, post];
+      }
       newPosts.push(post);
     }
   }
