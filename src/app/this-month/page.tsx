@@ -1,5 +1,6 @@
 "use client";
 
+import { COLORS, DashboardStats } from "@/types/base-types";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart,
@@ -14,16 +15,7 @@ import {
   Cell
 } from "recharts";
 
-interface DashboardStats {
-  totalEmissions: number;
-  emissionsByScope: { name: string; value: number }[];
-  emissionsByCompany: { name: string; value: number }[];
-  emissionsByPcfStage: { name: string; value: number }[];
-  cradleToGatePcf: number;
-  cradleToGravePcf: number;
-}
 
-const COLORS = ["#4edea3", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#8ab4f8"];
 
 export default function ThisMonthPage() {
   const d = new Date();
