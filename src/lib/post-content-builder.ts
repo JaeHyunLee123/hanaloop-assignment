@@ -5,6 +5,9 @@ function sumEmissions(emissions: ExtendedGhgEmission[]): string {
   return emissions.reduce((sum, e) => sum + e.emissions, 0).toFixed(2);
 }
 
+
+export type PayloadItemType = "guitar" | "string" | "pickup";
+
 /**
  * 회사 ID와 해당 월의 emission, 생산/수입 수량을 기반으로
  * PRD에 정의된 형식의 Post content 문자열을 생성한다.
@@ -12,7 +15,8 @@ function sumEmissions(emissions: ExtendedGhgEmission[]): string {
 export function buildPostContent(
   company: Company,
   monthEmissions: ExtendedGhgEmission[],
-  quantity: number
+  quantity: number,
+  itemType?: PayloadItemType
 ): string {
   const total = sumEmissions(monthEmissions);
 
@@ -34,18 +38,15 @@ export function buildPostContent(
 
     case "kr-delivery": {
       // 국내배송회사는 3건의 운송 이력을 줄바꿈으로 누적
-      const stringQty = Math.ceil(quantity * 0.8);
-      const pickupQty = Math.ceil(quantity * 0.5);
-      const deliveryKm = Math.ceil(quantity * 12);
-      const emissionEntries = monthEmissions;
-      const perEntry = (
-        emissionEntries.reduce((s, e) => s + e.emissions, 0) / 3
-      ).toFixed(2);
-      return [
-        `기타줄 ${stringQty}개 운송, ${perEntry}tCO2e 배출`,
-        `픽업 ${pickupQty}개 운송, ${perEntry}tCO2e 배출`,
-        `기타 배송 총 ${deliveryKm}km 운송, ${perEntry}tCO2e 배출`,
-      ].join("\n");
+      if(itemType === "guitar"){
+        return `기타 배송 총 ${quantity}km 운송, ${total}tCO2e 배출`
+      }else if(itemType === "pickup"){
+        return `픽업 ${quantity}개 운송, ${total}tCO2e 배출`
+      }else if(itemType === "string"){
+        return `기타줄 ${quantity}개 운송, ${total}tCO2e 배출`
+      }else{
+        return `${total}tCO2e 배출`
+      }
     }
 
     default:

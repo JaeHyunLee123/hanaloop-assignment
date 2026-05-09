@@ -7,10 +7,13 @@ import {
   processGuitarStringImport,
   mergeEmissions
 } from "./emissions-calculator";
-import { buildPostContent } from "./post-content-builder";
+import { buildPostContent, PayloadItemType } from "./post-content-builder";
+
+type PayloadActionType = "guitar_production" | "delivery" | "pickup_import" | "string_import";
+
 
 export interface EmissionPayload {
-  actionType: string;
+  actionType: PayloadActionType;
   quantity: number;
   yearMonth: string;
 }
@@ -25,19 +28,24 @@ export function applyEmissions(
   payload: EmissionPayload
 ): Post[] {
   let map: Map<string, ExtendedGhgEmission[]>;
+  let itemType:PayloadItemType = "guitar"
   
   switch (payload.actionType) {
     case "guitar_production":
       map = processGuitarProduction(payload.quantity, payload.yearMonth);
+      itemType = "guitar"
       break;
     case "delivery":
       map = processDeliveryDistance(payload.quantity, payload.yearMonth);
+      itemType = "guitar"
       break;
     case "pickup_import":
       map = processPickupImport(payload.quantity, payload.yearMonth);
+      itemType = "string"
       break;
     case "string_import":
       map = processGuitarStringImport(payload.quantity, payload.yearMonth);
+      itemType = "pickup"
       break;
     default:
       throw new Error(`Invalid actionType: ${payload.actionType}`);
@@ -52,8 +60,9 @@ export function applyEmissions(
       for (const e of newEmissions) {
         company.emissions = mergeEmissions(company.emissions, e);
       }
+
       
-      const content = buildPostContent(company, newEmissions, payload.quantity);
+      const content = buildPostContent(company, newEmissions, payload.quantity, itemType);
       
       // 해당 월/회사에 대한 기존 포스트가 있는지 확인
       const existingPostIndex = posts.findIndex(
