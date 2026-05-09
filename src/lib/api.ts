@@ -3,6 +3,15 @@ import { countries } from "@/data/country-data";
 import { companies, posts } from "@/lib/fake-db";
 import { Post, ExtendedGhgEmission } from "@/types/base-types";
 
+import {
+  processGuitarProduction,
+  processDeliveryDistance,
+  processPickupImport,
+  processGuitarStringImport,
+  mergeEmissions
+} from "./emissions-calculator";
+import { buildPostContent } from "./post-content-builder";
+
 const _countries = [...countries];
 const _companies = [...companies];
 let _posts = [...posts];
@@ -40,14 +49,7 @@ export async function createOrUpdatePost(
   return created;
 }
 
-import {
-  processGuitarProduction,
-  processDeliveryDistance,
-  processPickupImport,
-  processGuitarStringImport,
-  mergeEmissions
-} from "./emissions-calculator";
-import { buildPostContent } from "./post-content-builder";
+
 
 export async function submitEmissions(payload: { actionType: string; quantity: number; yearMonth: string }) {
   await delay(jitter());
@@ -83,10 +85,10 @@ export async function submitEmissions(payload: { actionType: string; quantity: n
       let post:Post;
       const content = buildPostContent(company, newEmissions, payload.quantity);
       
-      const existingPosts = _posts.filter((post) => post.resourceUid === company.id && post.dateTime === payload.yearMonth)
+      const existingPost = _posts.find((post) => post.resourceUid === company.id && post.dateTime === payload.yearMonth)
       
-      if(existingPosts.length > 0){
-        post = existingPosts[0]    
+      if(existingPost){
+        post = existingPost    
         post.content = `${post.content}\n${content}`;
       }else {
         post = {
