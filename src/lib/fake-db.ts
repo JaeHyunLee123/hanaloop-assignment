@@ -1,6 +1,5 @@
-// 페이크 인메모리 DB: 고정 6개 회사, 더미 배출 및 포스트 데이터
-import { Company, ExtendedGhgEmission, Post } from "@/types/base-types";
-import { buildPostContent } from "@/lib/post-content-builder";
+import { Company, Post } from "@/types/base-types";
+import { applyEmissions } from "./emission-service";
 
 // --- 고정 6개 Company ---
 const COMPANY_KENDER: Company = {
@@ -45,6 +44,17 @@ const COMPANY_KR_DELIVERY: Company = {
   emissions: [],
 };
 
+export const companies: Company[] = [
+  COMPANY_KENDER,
+  COMPANY_CN_STRING,
+  COMPANY_ID_PICKUP,
+  COMPANY_CN_IMPORT,
+  COMPANY_ID_IMPORT,
+  COMPANY_KR_DELIVERY,
+];
+
+export const posts: Post[] = [];
+
 // --- 더미 데이터 생성 헬퍼 ---
 function generateYearMonths(
   startYear: number,
@@ -66,8 +76,6 @@ function generateYearMonths(
   return result;
 }
 
-const yearMonths = generateYearMonths(2025, 1, new Date().getFullYear(), new Date().getMonth());
-
 // 시드 기반 의사 난수 (재현 가능한 더미 데이터)
 function seededRandom(seed: number): () => number {
   let s = seed;
@@ -79,121 +87,40 @@ function seededRandom(seed: number): () => number {
 
 const rand = seededRandom(42);
 
-function randBetween(min: number, max: number): number {
-  return Math.round((min + rand() * (max - min)) * 100) / 100;
+function randBetween(min: number, max: number, isInt = true): number {
+  const val = min + rand() * (max - min);
+  return isInt ? Math.floor(val) : Math.round(val * 100) / 100;
 }
 
-// --- Kender 배출 데이터 생성 ---
-// Scope 1 (2단계: 제조), Scope 2 (2단계: 전력), Scope 3 (4단계: 사용, 5단계: 폐기)
-function generateKenderEmissions(): ExtendedGhgEmission[] {
-  const emissions: ExtendedGhgEmission[] = [];
-  for (const ym of yearMonths) {
-    emissions.push(
-      { yearMonth: ym, source: "", emissions: randBetween(5, 15), scope: 1, pcfStage: 2 },
-      { yearMonth: ym, source: "", emissions: randBetween(8, 20), scope: 2, pcfStage: 2 },
-      { yearMonth: ym, source: "", emissions: randBetween(2, 8), scope: 3, pcfStage: 4 },
-      { yearMonth: ym, source: "", emissions: randBetween(1, 4), scope: 3, pcfStage: 5 }
-    );
-  }
-  return emissions;
+// --- 시딩 실행 ---
+const yearMonths = generateYearMonths(2025, 1, new Date().getFullYear(), new Date().getMonth());
+
+for (const ym of yearMonths) {
+  // 1. 기타 생산 (Kender 배출 및 사용/폐기 단계 배출 발생)
+  applyEmissions(companies, posts, {
+    actionType: "guitar_production",
+    quantity: randBetween(50, 150),
+    yearMonth: ym,
+  });
+
+  // 2. 픽업 수입 (인도네시아 업체들 및 국내 배송 배출 발생)
+  applyEmissions(companies, posts, {
+    actionType: "pickup_import",
+    quantity: randBetween(100, 300),
+    yearMonth: ym,
+  });
+
+  // 3. 기타줄 수입 (중국 업체들 및 국내 배송 배출 발생)
+  applyEmissions(companies, posts, {
+    actionType: "string_import",
+    quantity: randBetween(200, 500),
+    yearMonth: ym,
+  });
+
+  // 4. 추가 배송 활동 (국내배송회사 거리 기반 배출 발생)
+  applyEmissions(companies, posts, {
+    actionType: "delivery",
+    quantity: randBetween(500, 2000, false),
+    yearMonth: ym,
+  });
 }
-
-// --- 중국기타줄회사 배출 데이터 (Scope 3, 1단계: 원자재 생산) ---
-function generateCnStringEmissions(): ExtendedGhgEmission[] {
-  const emissions: ExtendedGhgEmission[] = [];
-  for (const ym of yearMonths) {
-    emissions.push({
-      yearMonth: ym, source: "", emissions: randBetween(3, 10), scope: 3, pcfStage: 1,
-    });
-  }
-  return emissions;
-}
-
-// --- 인도네시아픽업회사 배출 데이터 (Scope 3, 1단계: 원자재 생산) ---
-function generateIdPickupEmissions(): ExtendedGhgEmission[] {
-  const emissions: ExtendedGhgEmission[] = [];
-  for (const ym of yearMonths) {
-    emissions.push({
-      yearMonth: ym, source: "", emissions: randBetween(4, 12), scope: 3, pcfStage: 1,
-    });
-  }
-  return emissions;
-}
-
-// --- 중국수입회사 배출 데이터 (Scope 3, 3단계: 국제 운송) ---
-function generateCnImportEmissions(): ExtendedGhgEmission[] {
-  const emissions: ExtendedGhgEmission[] = [];
-  for (const ym of yearMonths) {
-    emissions.push({
-      yearMonth: ym, source: "", emissions: randBetween(2, 7), scope: 3, pcfStage: 3,
-    });
-  }
-  return emissions;
-}
-
-// --- 인도네시아수입회사 배출 데이터 (Scope 3, 3단계: 국제 운송) ---
-function generateIdImportEmissions(): ExtendedGhgEmission[] {
-  const emissions: ExtendedGhgEmission[] = [];
-  for (const ym of yearMonths) {
-    emissions.push({
-      yearMonth: ym, source: "", emissions: randBetween(3, 9), scope: 3, pcfStage: 3,
-    });
-  }
-  return emissions;
-}
-
-// --- 국내배송회사 배출 데이터 (Scope 3, 3단계: 국내 운송 + 소비자 배송) ---
-function generateKrDeliveryEmissions(): ExtendedGhgEmission[] {
-  const emissions: ExtendedGhgEmission[] = [];
-  for (const ym of yearMonths) {
-    emissions.push(
-      { yearMonth: ym, source: "", emissions: randBetween(1, 5), scope: 3, pcfStage: 3 },
-      { yearMonth: ym, source: "", emissions: randBetween(1, 4), scope: 3, pcfStage: 3 }
-    );
-  }
-  return emissions;
-}
-
-// --- 회사 데이터 조립 ---
-COMPANY_KENDER.emissions = generateKenderEmissions();
-COMPANY_CN_STRING.emissions = generateCnStringEmissions();
-COMPANY_ID_PICKUP.emissions = generateIdPickupEmissions();
-COMPANY_CN_IMPORT.emissions = generateCnImportEmissions();
-COMPANY_ID_IMPORT.emissions = generateIdImportEmissions();
-COMPANY_KR_DELIVERY.emissions = generateKrDeliveryEmissions();
-
-export const companies: Company[] = [
-  COMPANY_KENDER,
-  COMPANY_CN_STRING,
-  COMPANY_ID_PICKUP,
-  COMPANY_CN_IMPORT,
-  COMPANY_ID_IMPORT,
-  COMPANY_KR_DELIVERY,
-];
-
-// --- Post 더미 데이터 생성 ---
-function generatePosts(): Post[] {
-  const result: Post[] = [];
-  let postId = 1;
-
-  for (const company of companies) {
-    for (const ym of yearMonths) {
-      const monthEmissions = company.emissions.filter(
-        (e) => e.yearMonth === ym
-      );
-      const quantity = Math.floor(rand() * 20 + 5);
-
-      result.push({
-        id: `post-${postId++}`,
-        title: `${company.name} ${ym} 통합 배출 이력`,
-        resourceUid: company.id,
-        dateTime: ym,
-        content: buildPostContent(company, monthEmissions, quantity),
-      });
-    }
-  }
-
-  return result;
-}
-
-export const posts: Post[] = generatePosts();

@@ -1,16 +1,9 @@
 // 지연, 실패 시뮬레이션이 포함된 페이크 API 함수
 import { countries } from "@/data/country-data";
 import { companies, posts } from "@/lib/fake-db";
-import { Post, ExtendedGhgEmission } from "@/types/base-types";
-
-import {
-  processGuitarProduction,
-  processDeliveryDistance,
-  processPickupImport,
-  processGuitarStringImport,
-  mergeEmissions
-} from "./emissions-calculator";
-import { buildPostContent } from "./post-content-builder";
+import { Post } from "@/types/base-types";
+import { EMISSION_FACTORS, BOM } from "./constants";
+import { applyEmissions, EmissionPayload } from "./emission-service";
 
 const _countries = [...countries];
 const _companies = [...companies];
@@ -49,66 +42,14 @@ export async function createOrUpdatePost(
   return created;
 }
 
-
-
-export async function submitEmissions(payload: { actionType: string; quantity: number; yearMonth: string }) {
+export async function submitEmissions(payload: EmissionPayload) {
   await delay(jitter());
   if (maybeFail()) throw new Error("Save failed");
 
-  let map: Map<string, ExtendedGhgEmission[]>;
-  switch (payload.actionType) {
-    case "guitar_production":
-      map = processGuitarProduction(payload.quantity, payload.yearMonth);
-      break;
-    case "delivery":
-      map = processDeliveryDistance(payload.quantity, payload.yearMonth);
-      break;
-    case "pickup_import":
-      map = processPickupImport(payload.quantity, payload.yearMonth);
-      break;
-    case "string_import":
-      map = processGuitarStringImport(payload.quantity, payload.yearMonth);
-      break;
-    default:
-      throw new Error("Invalid actionType");
-  }
-
-  const newPosts: Post[] = [];
-
-  for (const [companyId, newEmissions] of Array.from(map.entries())) {
-    const company = _companies.find((c) => c.id === companyId);
-    if (company) {
-      for (const e of newEmissions) {
-        company.emissions = mergeEmissions(company.emissions, e);
-      }
-      
-      let post:Post;
-      const content = buildPostContent(company, newEmissions, payload.quantity);
-      
-      const existingPost = _posts.find((post) => post.resourceUid === company.id && post.dateTime === payload.yearMonth)
-      
-      if(existingPost){
-        post = existingPost    
-        post.content = `${post.content}\n${content}`;
-      }else {
-        post = {
-          id: crypto.randomUUID(),
-          title: `${company.name} ${payload.yearMonth} 배출 이력`,
-          resourceUid: company.id,
-          dateTime: payload.yearMonth,
-          content,
-        };
-
-        _posts = [..._posts, post];
-      }
-      newPosts.push(post);
-    }
-  }
-
-  return newPosts;
+  return applyEmissions(_companies, _posts, payload);
 }
 
-import { EMISSION_FACTORS, BOM } from "./constants";
+
 
 const PCF_STAGE_NAMES: Record<number, string> = {
   1: "1단계: 원자재 생산 및 조달",
