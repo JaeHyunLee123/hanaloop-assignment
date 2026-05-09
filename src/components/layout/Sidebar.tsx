@@ -10,6 +10,7 @@ export default function Sidebar() {
     { name: "Dashboard", path: "/" },
     { name: "This Month", path: "/this-month" },
     { name: "Data Input", path: "/data-input" },
+    { name: "Posts", path: "/posts" },
   ];
 
   return (
