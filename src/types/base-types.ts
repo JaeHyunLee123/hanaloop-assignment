@@ -29,3 +29,14 @@ export type Post = {
   content: string;
 };
 
+export interface DashboardStats {
+  totalEmissions: number;
+  emissionsByScope: { name: string; value: number }[];
+  emissionsByCompany: { name: string; value: number }[];
+  emissionsByPcfStage: { name: string; value: number }[];
+  emissionsByMonth: { name: string; value: number }[];
+  cradleToGatePcf: number;
+  cradleToGravePcf: number;
+}
+
+export const COLORS = ["#4edea3", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51", "#8ab4f8"];

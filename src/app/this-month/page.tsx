@@ -12,17 +12,19 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell,
-  LineChart,
-  Line
+  Cell
 } from "recharts";
 
 
-export default function DashboardPage() {
+
+export default function ThisMonthPage() {
+  const d = new Date();
+  const currentMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
   const { data, isLoading, error } = useQuery<DashboardStats>({
-    queryKey: ["dashboard-stats"],
+    queryKey: ["dashboard-stats", currentMonth],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard-stats");
+      const res = await fetch(`/api/dashboard-stats?month=${currentMonth}`);
       if (!res.ok) throw new Error("Failed to fetch dashboard stats");
       return res.json();
     },
@@ -34,8 +36,8 @@ export default function DashboardPage() {
   return (
     <div className="p-8 space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Kender Dashboard</h1>
-        <p className="text-gray-400 mt-2">Comprehensive carbon emission analytics</p>
+        <h1 className="text-3xl font-bold text-foreground">This Month&apos;s Emissions</h1>
+        <p className="text-gray-400 mt-2">Carbon emission analytics for {currentMonth}</p>
       </div>
 
       {/* Top Cards */}
@@ -130,28 +132,6 @@ export default function DashboardPage() {
                 />
                 <Bar dataKey="value" fill="#8ab4f8" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Monthly Emissions Chart */}
-        <div className="bg-surface rounded-xl p-6 border border-border h-96 flex flex-col lg:col-span-2">
-          <h3 className="text-lg font-medium text-foreground mb-4">Monthly Emissions (Last 12 Months)</h3>
-          <div className="flex-1">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.emissionsByMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2f3b33" vertical={false} />
-                <XAxis dataKey="name" stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
-                <YAxis stroke="#a0aab2" tick={{ fill: "#a0aab2" }} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: "#1c241f", borderColor: "#2f3b33", color: "#e8edea" }}
-                  formatter={(value: unknown) => {
-                    const num = typeof value === "number" ? value : Number(value);
-                    return [`${num.toFixed(2)} tCO2e`, "Emissions"];
-                  }}
-                />
-                <Line type="monotone" dataKey="value" stroke="#e9c46a" strokeWidth={3} dot={{ r: 4, fill: "#e9c46a" }} />
-              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>

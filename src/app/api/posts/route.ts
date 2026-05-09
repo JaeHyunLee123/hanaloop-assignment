@@ -1,6 +1,6 @@
 // 포스트 조회 및 생성/수정 API 엔드포인트
 import { NextRequest, NextResponse } from "next/server";
-import { fetchPosts, createOrUpdatePost } from "@/lib/api";
+import { fetchPosts, createOrUpdatePost, submitEmissions } from "@/lib/api";
 
 export async function GET() {
   try {
@@ -17,6 +17,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    if (body.actionType) {
+      const result = await submitEmissions(body);
+      return NextResponse.json(result, { status: 201 });
+    }
     const result = await createOrUpdatePost(body);
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

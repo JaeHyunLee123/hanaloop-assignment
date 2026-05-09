@@ -66,7 +66,7 @@ function generateYearMonths(
   return result;
 }
 
-const yearMonths = generateYearMonths(2025, 1, 2026, 4);
+const yearMonths = generateYearMonths(2025, 1, new Date().getFullYear(), new Date().getMonth());
 
 // 시드 기반 의사 난수 (재현 가능한 더미 데이터)
 function seededRandom(seed: number): () => number {
