@@ -8,6 +8,7 @@ export default function Sidebar() {
 
   const navItems = [
     { name: "Dashboard", path: "/" },
+    { name: "This Month", path: "/this-month" },
     { name: "Data Input", path: "/data-input" },
   ];
 

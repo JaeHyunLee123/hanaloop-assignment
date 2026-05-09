@@ -107,7 +107,7 @@ const PCF_STAGE_NAMES: Record<number, string> = {
   5: "5단계: 제품 폐기",
 };
 
-export async function getDashboardStats() {
+export async function getDashboardStats(monthFilter?: string) {
   await delay(jitter());
 
   let totalEmissions = 0;
@@ -119,6 +119,10 @@ export async function getDashboardStats() {
   for (const company of _companies) {
     let companyTotal = 0;
     for (const e of company.emissions) {
+      if (monthFilter && e.yearMonth !== monthFilter) {
+        continue;
+      }
+
       totalEmissions += e.emissions;
       companyTotal += e.emissions;
 
