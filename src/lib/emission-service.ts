@@ -41,11 +41,11 @@ export function applyEmissions(
       break;
     case "pickup_import":
       map = processPickupImport(payload.quantity, payload.yearMonth);
-      itemType = "string"
+      itemType = "pickup"
       break;
     case "string_import":
       map = processGuitarStringImport(payload.quantity, payload.yearMonth);
-      itemType = "pickup"
+      itemType = "string"
       break;
     default:
       throw new Error(`Invalid actionType: ${payload.actionType}`);
