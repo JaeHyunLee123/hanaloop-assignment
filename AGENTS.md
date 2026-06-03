@@ -221,3 +221,17 @@ This is the step LLMs skip most often after "run tests". They guess from error k
 상황: 코드의 특정 부분을 잘 모르거나, 전체 시스템 구조에서 이 코드가 어떻게 연결되는지 더 넓은 시야에서 이해하고 싶을 때 사용합니다.
 활용법: 추상화 계층을 한 단계 위로 올려, 도메인 용어를 사용해 관련된 모든 모듈과 호출자(caller)의 연결 관계를 전체적으로 설명합니다.
 적용 예시: "이 모듈이 너무 복잡한데, zoom-out 해서 이 코드가 전체 아키텍처에서 어떤 역할을 하는지 설명해줘."
+
+## Agent skills
+
+### Issue tracker
+
+이 리포지토리의 이슈는 GitHub Issues를 통해 관리하며 gh CLI를 사용하여 제어합니다. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+기본 이슈 분류 라벨 체계(needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix)를 그대로 사용합니다. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+이 리포지토리는 단일 도메인 문서 구조(single-context)를 가집니다. See `docs/agents/domain.md`.

@@ -33,3 +33,9 @@
   - `mergeEmissions` 함수: `yearMonth`, `source`, `scope`, `pcfStage` 4개 키가 모두 일치할 때만 합산. 원본 불변(immutable).
   - 마이너스(-) 입력은 동일한 파이프라인을 통과하여 음수 emission을 생성하고, mergeEmissions로 기존 값에서 차감됨.
   - 전체 테스트 37개 (Phase 1: 11개 + Phase 2: 26개) 모두 통과 확인.
+
+## 2026-06-03: 에이전트 스킬 설정 구축
+- `/setup-matt-pocock-skills`를 기반으로 엔지니어링 스킬 연동 환경을 구축함.
+- **이슈 트래커**: GitHub Issues (`gh` CLI 기반)를 사용하기로 결정함.
+- **트리아지 라벨**: 기본 5개 라벨(`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`)을 그대로 사용하기로 함.
+- **도메인 문서**: 단일 도메인 구조(`Single-context`)로 `CONTEXT.md` 및 `docs/adr/`를 운용하기로 설정함.
