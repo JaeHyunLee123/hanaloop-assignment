@@ -1,11 +1,21 @@
-// 페이크 DB 더미 데이터의 무결성을 검증하는 테스트
-import { describe, it, expect } from "vitest";
-import { companies, posts } from "@/lib/fake-db";
-import { countries } from "@/data/country-data";
+// 데이터베이스의 실제 데이터 구조 및 비즈니스 제약조건 무결성 검증 테스트
+import { describe, it, expect, beforeAll } from "vitest";
+import { fetchCompanies, fetchPosts, fetchCountries } from "@/lib/api";
+import { Company, Post, Country } from "@/types/base-types";
 
 const YEAR_MONTH_REGEX = /^\d{4}-\d{2}$/;
 
-describe("fake-db 더미 데이터 검증", () => {
+describe("데이터베이스 실제 데이터 검증", () => {
+  let companies: Company[] = [];
+  let posts: Post[] = [];
+  let countries: Country[] = [];
+
+  beforeAll(async () => {
+    companies = await fetchCompanies();
+    posts = await fetchPosts();
+    countries = await fetchCountries();
+  });
+
   describe("companies", () => {
     it("6개의 회사가 존재해야 한다", () => {
       expect(companies).toHaveLength(6);

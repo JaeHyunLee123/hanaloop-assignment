@@ -27,7 +27,7 @@ describe("lib/api 모의 함수 테스트", () => {
   it("createOrUpdatePost는 id 없이 호출하면 새 Post를 생성해야 한다", async () => {
     const newPost = {
       title: "테스트 포스트",
-      resourceUid: "test-company-id",
+      resourceUid: "kender",
       dateTime: "2026-01",
       content: "테스트 내용",
     };

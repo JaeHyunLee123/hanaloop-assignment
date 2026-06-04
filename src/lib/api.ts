@@ -15,9 +15,16 @@ import {
   processGuitarStringImport,
 } from "./emissions-calculator";
 import { buildPostContent, PayloadItemType } from "./post-content-builder";
-import { EmissionPayload } from "./emission-service";
 import { eq, and, sql, sum } from "drizzle-orm";
 import crypto from "crypto";
+
+export type PayloadActionType = "guitar_production" | "delivery" | "pickup_import" | "string_import";
+
+export interface EmissionPayload {
+  actionType: PayloadActionType;
+  quantity: number;
+  yearMonth: string;
+}
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 const jitter = () => 200 + Math.random() * 600;
