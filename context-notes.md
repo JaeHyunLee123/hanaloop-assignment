@@ -48,4 +48,11 @@
 - **시드 실행**: Next.js 실행 오버헤드를 막기 위해 `src/db/seed.ts` 스크립트를 작성하여 일회성으로 데이터를 삽입하는 구조를 설계함.
 - **데이터베이스 플랫폼 전환**: Supabase 프리 플랜 용량 제한 도달 이슈로 인하여, Drizzle ORM과 완벽히 호환되며 넉넉한 무료 티어(0.5GB 스토리지)를 지원하는 서버리스 PostgreSQL인 Neon으로 배포 데이터베이스를 변경하고 계획서 및 환경 변수를 업데이트함.
 
-
+- **2026-06-04 (마이그레이션 완료)**.
+  - Drizzle ORM 및 Neon Serverless PostgreSQL 실제 연동 완료.
+  - `countries`, `companies`, `emissions`, `posts` 테이블의 1:N 관계형 스키마 설계 및 마이그레이션 파일 생성/적용 완료.
+  - `src/db/seed.ts` 독립 실행형 스크립트로 2025-01부터 현재 전월까지의 기초 및 계산 데이터 삽입 완료.
+  - `src/lib/api.ts` 내부의 조회, 생성/수정, Upsert 및 트랜잭션 로직을 Drizzle 쿼리로 성공적으로 마이그레이션.
+  - `getDashboardStats` 집계 로직을 SQL Group By 및 SUM 연산으로 고도화 최적화하여 쿼리 성능 대폭 향상.
+  - `fake-db.test.ts` 및 `api.test.ts`를 실제 데이터베이스 연동 환경에 맞춰 개편하여 기존 37개 단위 테스트가 모두 안정적으로 통과함을 검증함.
+  - 더 이상 사용하지 않는 레거시 파일들(`fake-db.ts`, `emission-service.ts`, `country-data.ts`) 상단에 "더 이상 사용하지 않는 파일" 주석 표시 적용.
