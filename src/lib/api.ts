@@ -16,7 +16,7 @@ import {
 } from "./emissions-calculator";
 import { buildPostContent, PayloadItemType } from "./post-content-builder";
 import { EmissionPayload } from "./emission-service";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, sum } from "drizzle-orm";
 import crypto from "crypto";
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -240,46 +240,91 @@ const PCF_STAGE_NAMES: Record<number, string> = {
 export async function getDashboardStats(monthFilter?: string) {
   await delay(jitter());
 
-  const dbCompanies = await db.query.companies.findMany({
-    with: { emissions: true },
-  });
+  // 1. totalEmissions
+  const [totalRes] = await db
+    .select({ value: sum(emissionsTable.emissions) })
+    .from(emissionsTable)
+    .where(monthFilter ? eq(emissionsTable.yearMonth, monthFilter) : undefined);
+  const totalEmissions = Number(totalRes?.value || 0);
 
-  const mappedCompanies = dbCompanies.map((c) => ({
-    id: c.id,
-    name: c.name,
-    country: c.countryCode,
-    emissions: c.emissions.map((e) => ({
-      yearMonth: e.yearMonth,
-      source: e.source,
-      emissions: e.emissions,
-      scope: e.scope as 1 | 2 | 3,
-      pcfStage: e.pcfStage as 1 | 2 | 3 | 4 | 5,
-    })),
+  // 2. emissionsByScope
+  const scopeRes = await db
+    .select({
+      scope: emissionsTable.scope,
+      value: sum(emissionsTable.emissions),
+    })
+    .from(emissionsTable)
+    .where(monthFilter ? eq(emissionsTable.yearMonth, monthFilter) : undefined)
+    .groupBy(emissionsTable.scope)
+    .orderBy(emissionsTable.scope);
+
+  const emissionsByScope = scopeRes.map((r) => ({
+    name: `Scope ${r.scope}`,
+    value: Number(r.value || 0),
   }));
 
-  let totalEmissions = 0;
-  const scopeMap = new Map<number, number>();
-  const companyMap = new Map<string, number>();
-  const stageMap = new Map<number, number>();
+  // 3. emissionsByCompany
+  const joinCondition = monthFilter
+    ? and(
+        eq(companiesTable.id, emissionsTable.companyId),
+        eq(emissionsTable.yearMonth, monthFilter)
+      )
+    : eq(companiesTable.id, emissionsTable.companyId);
+
+  const companyRes = await db
+    .select({
+      companyName: companiesTable.name,
+      value: sum(emissionsTable.emissions),
+    })
+    .from(companiesTable)
+    .leftJoin(emissionsTable, joinCondition)
+    .groupBy(companiesTable.id, companiesTable.name);
+
+  const emissionsByCompany = companyRes.map((r) => ({
+    name: r.companyName,
+    value: Number(r.value || 0),
+  }));
+
+  // 4. emissionsByPcfStage
+  const stageRes = await db
+    .select({
+      pcfStage: emissionsTable.pcfStage,
+      value: sum(emissionsTable.emissions),
+    })
+    .from(emissionsTable)
+    .where(monthFilter ? eq(emissionsTable.yearMonth, monthFilter) : undefined)
+    .groupBy(emissionsTable.pcfStage)
+    .orderBy(emissionsTable.pcfStage);
+
+  const emissionsByPcfStage = stageRes.map((r) => ({
+    name: PCF_STAGE_NAMES[r.pcfStage] || `Stage ${r.pcfStage}`,
+    value: Number(r.value || 0),
+  }));
+
+  // 5. emissionsByMonth
+  const monthlyRes = await db
+    .select({
+      yearMonth: emissionsTable.yearMonth,
+      value: sum(emissionsTable.emissions),
+    })
+    .from(emissionsTable)
+    .groupBy(emissionsTable.yearMonth);
+
   const monthlyMap = new Map<string, number>();
-
-  for (const company of mappedCompanies) {
-    let companyTotal = 0;
-    for (const e of company.emissions) {
-      if (monthFilter && e.yearMonth !== monthFilter) {
-        continue;
-      }
-
-      totalEmissions += e.emissions;
-      companyTotal += e.emissions;
-
-      scopeMap.set(e.scope, (scopeMap.get(e.scope) || 0) + e.emissions);
-      stageMap.set(e.pcfStage, (stageMap.get(e.pcfStage) || 0) + e.emissions);
-
-      const key = e.yearMonth;
-      monthlyMap.set(key, (monthlyMap.get(key) || 0) + e.emissions);
+  for (const r of monthlyRes) {
+    if (r.yearMonth) {
+      monthlyMap.set(r.yearMonth, Number(r.value || 0));
     }
-    companyMap.set(company.name, companyTotal);
+  }
+
+  const now = new Date();
+  const emissionsByMonth = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const key = `${y}-${m}`;
+    emissionsByMonth.push({ name: key, value: monthlyMap.get(key) || 0 });
   }
 
   // Calculate static PCF per unit
@@ -311,31 +356,10 @@ export async function getDashboardStats(monthFilter?: string) {
     EMISSION_FACTORS.PRODUCT_USE_PER_UNIT +
     EMISSION_FACTORS.PRODUCT_DISPOSAL_PER_UNIT;
 
-  // Ordered Stages
-  const emissionsByPcfStage = Array.from(stageMap.entries())
-    .sort(([k1], [k2]) => k1 - k2)
-    .map(([k, v]) => ({ name: PCF_STAGE_NAMES[k] || `Stage ${k}`, value: v }));
-
-  // Last 12 months
-  const now = new Date();
-  const emissionsByMonth = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const key = `${y}-${m}`;
-    emissionsByMonth.push({ name: key, value: monthlyMap.get(key) || 0 });
-  }
-
   return {
     totalEmissions,
-    emissionsByScope: Array.from(scopeMap.entries())
-      .sort(([k1], [k2]) => k1 - k2)
-      .map(([k, v]) => ({ name: `Scope ${k}`, value: v })),
-    emissionsByCompany: Array.from(companyMap.entries()).map(([k, v]) => ({
-      name: k,
-      value: v,
-    })),
+    emissionsByScope,
+    emissionsByCompany,
     emissionsByPcfStage,
     emissionsByMonth,
     cradleToGatePcf,
