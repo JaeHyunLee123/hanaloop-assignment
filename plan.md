@@ -1,14 +1,14 @@
-# 구현 계획: Drizzle ORM 및 Supabase 연동을 통한 실제 API 전환
+# 구현 계획: Drizzle ORM 및 Neon 연동을 통한 실제 API 전환
 
 ## 목표
-기존 메모리 기반의 더미 API(`src/lib/api.ts` 및 `src/lib/fake-db.ts`)를 Drizzle ORM과 Supabase PostgreSQL을 연동한 실제 데이터베이스 기반 API 코드로 전환합니다. 이를 통해 영속성, 데이터 정속성, 트랜잭션 안전성을 확보합니다.
+기존 메모리 기반의 더미 API(`src/lib/api.ts` 및 `src/lib/fake-db.ts`)를 Drizzle ORM과 Neon PostgreSQL을 연동한 실제 데이터베이스 기반 API 코드로 전환합니다. 이를 통해 영속성, 데이터 정속성, 트랜잭션 안전성을 확보합니다.
 
 ## 세부 구현 단계
 
 ### 1. 패키지 설치 및 환경 설정
-* Drizzle ORM과 PostgreSQL 연결 드라이버를 설치합니다.
+* Drizzle ORM과 Neon PostgreSQL 연결용 서버리스 드라이버를 설치합니다.
 * 개발 도구로 `drizzle-kit`과 `tsx`를 추가합니다.
-* `.env.local` 환경 변수 파일에 Supabase 커넥션 주소(`DATABASE_URL`, `DIRECT_URL`)를 정의합니다.
+* `.env.local` 환경 변수 파일에 Neon 커넥션 주소(`DATABASE_URL`)를 정의합니다.
 
 ### 2. Drizzle DB 스키마 정의 및 설정
 * `src/db/schema.ts` 파일을 생성하여 `countries`, `companies`, `emissions`, `posts` 테이블의 관계와 스키마를 정의합니다.
@@ -19,7 +19,7 @@
 * `src/db/index.ts` 파일을 생성하여 Next.js의 개발 모드 핫 리로드(Hot-reload) 시 연결 인스턴스가 중복 생성되는 문제를 방지하는 글로벌 커넥션 풀을 구현합니다.
 
 ### 4. 스키마 마이그레이션 실행
-* Drizzle Kit 명령어를 사용하여 작성된 스키마를 기반으로 마이그레이션 SQL을 생성하고 Supabase 데이터베이스에 반영합니다.
+* Drizzle Kit 명령어를 사용하여 작성된 스키마를 기반으로 마이그레이션 SQL을 생성하고 Neon 데이터베이스에 반영합니다.
 
 ### 5. 독립형 시드 스크립트 작성 및 실행
 * `src/db/seed.ts` 파일을 작성합니다. 기존 `src/lib/fake-db.ts`의 시드 로직(2025-01부터 현재 전월까지의 데이터 생성 및 누적 계산 파이프라인)을 그대로 포팅하여 데이터베이스에 적재합니다.

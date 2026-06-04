@@ -1,8 +1,8 @@
 # 작업 체크리스트
 
 ## DB 환경 구축 및 설정
-- [ ] Drizzle 및 PostgreSQL 드라이버 패키지 설치 (`drizzle-orm`, `postgres`, `drizzle-kit`, `tsx`)
-- [ ] `.env.local` 파일에 Supabase 접속 환경 변수(`DATABASE_URL`, `DIRECT_URL`) 구성
+- [ ] Drizzle 및 Neon Postgres 드라이버 패키지 설치 (`drizzle-orm`, `@neondatabase/serverless`, `drizzle-kit`, `tsx`)
+- [ ] `.env.local` 파일에 Neon 접속 환경 변수(`DATABASE_URL`) 구성
 - [ ] Drizzle 설정 파일(`drizzle.config.ts`) 정의
 - [ ] 데이터베이스 스키마 정의 (`src/db/schema.ts`)
 - [ ] 데이터베이스 연결 클라이언트 구현 (`src/db/index.ts`)

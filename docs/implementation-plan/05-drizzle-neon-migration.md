@@ -1,20 +1,19 @@
-<!-- Drizzle ORM 및 Supabase 연동 구현 계획 문서 -->
-# Drizzle ORM 및 Supabase 연동을 통한 실제 API 마이그레이션 계획
+<!-- Drizzle ORM 및 Neon 연동 구현 계획 문서 -->
+# Drizzle ORM 및 Neon 연동을 통한 실제 API 마이그레이션 계획
 
-본 문서는 기존의 메모리 기반 페이크 API(`src/lib/api.ts`, `src/lib/fake-db.ts`)를 Supabase PostgreSQL 데이터베이스와 Drizzle ORM 환경으로 전환하기 위한 구체적인 개발 계획서입니다.
+본 문서는 기존의 메모리 기반 페이크 API(`src/lib/api.ts`, `src/lib/fake-db.ts`)를 Neon PostgreSQL 데이터베이스와 Drizzle ORM 환경으로 전환하기 위한 구체적인 개발 계획서입니다.
 
 ## 1. 패키지 설치 및 환경 설정
 
 ### 패키지 설치
 터미널에서 아래 패키지들을 설치합니다.
-* `npm install drizzle-orm postgres`
+* `npm install drizzle-orm @neondatabase/serverless`
 * `npm install -D drizzle-kit tsx`
 
 ### 환경 변수 구성
-`.env.local` 파일에 다음과 같이 Supabase 데이터베이스 연결 주소를 정의합니다.
+`.env.local` 파일에 다음과 같이 Neon 데이터베이스 연결 주소를 정의합니다.
 ```env
-DATABASE_URL=postgresql://postgres.[your-project-id]:[password]@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true
-DIRECT_URL=postgresql://postgres.[your-project-id]:[password]@aws-0-ap-northeast-2.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://[user]:[password]@[project-id].ap-southeast-1.aws.neon.tech/neondb?sslmode=require
 ```
 
 ## 2. 데이터베이스 스키마 및 설정
@@ -29,7 +28,7 @@ export default defineConfig({
   out: "./src/db/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DIRECT_URL!,
+    url: process.env.DATABASE_URL!,
   },
 })
 ```
@@ -38,12 +37,12 @@ export default defineConfig({
 실제 API 전환에 맞게 타입을 정의하고 외래키 관계를 맺습니다.
 * **`countries`**: `code` (기본키), `name`
 * **`companies`**: `id` (기본키), `name`, `country_code` (`countries.code`를 참조하는 외래키)
-* **`emissions`**: `id` (기본키), `company_id` (`companies.id`를 참조하는 외래키), `year_month`, `source`, `emissions` (numeric/double precision), `scope`, `pcf_stage`.
+* **`emissions`**: `id` (기본키, 자동 생성 UUID 또는 Serial), `company_id` (`companies.id`를 참조하는 외래키), `year_month`, `source`, `emissions` (numeric/double precision), `scope`, `pcf_stage`.
   * `(company_id, year_month, source, scope, pcf_stage)` 5개 컬럼의 복합 유니크 제약조건을 설정합니다.
 * **`posts`**: `id` (기본키, UUID), `title`, `resource_uid` (`companies.id`를 참조하는 외래키), `date_time`, `content`
 
 ### 데이터베이스 커넥션 설정 (`src/db/index.ts`)
-Next.js의 핫 리로드 시 발생하는 연결 누수를 방지하기 위해 싱글톤 패턴으로 Drizzle 클라이언트를 생성합니다.
+Next.js의 핫 리로드 시 발생하는 연결 누수를 방지하기 위해 싱글톤 패턴으로 Drizzle 클라이언트를 생성합니다. Neon의 `@neondatabase/serverless` 드라이버를 임포트하여 설정합니다.
 
 ## 3. 데이터 시딩 및 마이그레이션
 
