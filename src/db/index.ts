@@ -1,4 +1,7 @@
 // 데이터베이스 연결 싱글톤 및 Neon 클라이언트 인스턴스화
+import { config } from "dotenv";
+config({ path: ".env.local" });
+
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
