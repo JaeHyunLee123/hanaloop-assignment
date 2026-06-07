@@ -56,3 +56,8 @@
   - `getDashboardStats` 집계 로직을 SQL Group By 및 SUM 연산으로 고도화 최적화하여 쿼리 성능 대폭 향상.
   - `fake-db.test.ts` 및 `api.test.ts`를 실제 데이터베이스 연동 환경에 맞춰 개편하여 기존 37개 단위 테스트가 모두 안정적으로 통과함을 검증함.
   - 더 이상 사용하지 않는 레거시 파일들(`fake-db.ts`, `emission-service.ts`, `country-data.ts`) 상단에 "더 이상 사용하지 않는 파일" 주석 표시 적용.
+
+- **2026-06-07 (트랜잭션 미지원 이슈 해결)**.
+  - Drizzle의 `neon-http` 드라이버 사용 시 HTTP의 무상태성 제약으로 인해 다중 쿼리 트랜잭션(`db.transaction`)이 미지원되는 버그(`No transactions support in neon-http driver`)가 관측됨.
+  - 이를 해결하기 위해 `@neondatabase/serverless`의 `Pool` 객체 및 `drizzle-orm/neon-serverless` WebSocket 기반 드라이버로 커넥션 연결 방식을 마이그레이션함.
+  - 전환 결과, 원자성이 필요한 `submitEmissions`를 포함하여 실제 트랜잭션 기능이 정상 작동하고 전체 38개 단위 테스트가 모두 무결하게 통과됨을 보장함.
