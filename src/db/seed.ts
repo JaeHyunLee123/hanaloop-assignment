@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // 데이터베이스 초기 국가, 회사 정보 및 탄소 배출 이력 데이터 시딩
 import { config } from "dotenv";
 config({ path: ".env.local" });
@@ -19,7 +20,7 @@ function generateYearMonths(
   startYear: number,
   startMonth: number,
   endYear: number,
-  endMonth: number
+  endMonth: number,
 ): string[] {
   const result: string[] = [];
   let y = startYear;
@@ -84,10 +85,15 @@ async function main() {
 
   // 3. 2025-01부터 현재 전월까지의 연월 목록 생성
   const now = new Date();
-  const yearMonths = generateYearMonths(2025, 1, now.getFullYear(), now.getMonth());
+  const yearMonths = generateYearMonths(
+    2025,
+    1,
+    now.getFullYear(),
+    now.getMonth(),
+  );
 
   // 임시 메모리 구조 생성 (배출량 누적용 및 포스트 빌더용)
-  const localCompaniesState = staticCompanies.map(c => ({
+  const localCompaniesState = staticCompanies.map((c) => ({
     id: c.id,
     name: c.name,
     country: c.countryCode,
@@ -101,10 +107,26 @@ async function main() {
   // 시딩할 배출 내역을 매월 생성 후 DB에 직접 Insert/Upsert합니다.
   for (const ym of yearMonths) {
     const payloads = [
-      { actionType: "guitar_production" as const, quantity: randBetween(50, 150), itemType: "guitar" as const },
-      { actionType: "pickup_import" as const, quantity: randBetween(100, 300), itemType: "pickup" as const },
-      { actionType: "string_import" as const, quantity: randBetween(200, 500), itemType: "string" as const },
-      { actionType: "delivery" as const, quantity: randBetween(500, 2000, false), itemType: "guitar" as const },
+      {
+        actionType: "guitar_production" as const,
+        quantity: randBetween(50, 150),
+        itemType: "guitar" as const,
+      },
+      {
+        actionType: "pickup_import" as const,
+        quantity: randBetween(100, 300),
+        itemType: "pickup" as const,
+      },
+      {
+        actionType: "string_import" as const,
+        quantity: randBetween(200, 500),
+        itemType: "string" as const,
+      },
+      {
+        actionType: "delivery" as const,
+        quantity: randBetween(500, 2000, false),
+        itemType: "guitar" as const,
+      },
     ];
 
     for (const payload of payloads) {
@@ -124,18 +146,23 @@ async function main() {
           break;
       }
 
-      for (const [companyId, newEmissions] of Array.from(emissionMap.entries())) {
-        const localCompany = localCompaniesState.find(c => c.id === companyId);
+      for (const [companyId, newEmissions] of Array.from(
+        emissionMap.entries(),
+      )) {
+        const localCompany = localCompaniesState.find(
+          (c) => c.id === companyId,
+        );
         if (!localCompany) continue;
 
         // 배출 데이터를 DB에 Upsert (ON CONFLICT DO UPDATE)
         for (const e of newEmissions) {
           // 로컬 상태에도 반영 (포스트 빌드 및 누적 데이터 전달용)
           const existing = localCompany.emissions.find(
-            le => le.yearMonth === e.yearMonth &&
-                  le.source === e.source &&
-                  le.scope === e.scope &&
-                  le.pcfStage === e.pcfStage
+            (le) =>
+              le.yearMonth === e.yearMonth &&
+              le.source === e.source &&
+              le.scope === e.scope &&
+              le.pcfStage === e.pcfStage,
           );
           if (existing) {
             existing.emissions += e.emissions;
@@ -169,7 +196,12 @@ async function main() {
         }
 
         // 포스트 빌드
-        const content = buildPostContent(localCompany, newEmissions, payload.quantity, payload.itemType);
+        const content = buildPostContent(
+          localCompany,
+          newEmissions,
+          payload.quantity,
+          payload.itemType,
+        );
         const postKey = `${companyId}_${ym}`;
         const existingPost = postsMap.get(postKey);
         if (existingPost) {
