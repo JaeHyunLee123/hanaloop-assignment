@@ -1,3 +1,4 @@
+// 더 이상 사용하지 않는 레거시 페이크 데이터베이스 파일
 import { Company, Post } from "@/types/base-types";
 import { applyEmissions } from "./emission-service";
 

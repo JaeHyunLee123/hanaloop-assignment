@@ -1,4 +1,4 @@
-// 탄소 배출 액션을 실제 데이터에 적용하는 핵심 서비스 로직
+// 더 이상 사용하지 않는 레거시 배출 계산 및 포스트 반영 서비스
 import { Company, Post, ExtendedGhgEmission } from "@/types/base-types";
 import {
   processGuitarProduction,

@@ -39,3 +39,25 @@
 - **이슈 트래커**: GitHub Issues (`gh` CLI 기반)를 사용하기로 결정함.
 - **트리아지 라벨**: 기본 5개 라벨(`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`)을 그대로 사용하기로 함.
 - **도메인 문서**: 단일 도메인 구조(`Single-context`)로 `CONTEXT.md` 및 `docs/adr/`를 운용하기로 설정함.
+
+## 2026-06-04: 실제 API 및 DB 연동 마이그레이션 기획
+- **설계 검토**: `grill-with-docs` 스킬을 활용하여 실제 API 전환을 위한 데이터베이스 설계에 대한 검토를 진행함.
+- **테이블 관계**: `companies`와 `emissions`를 1:N 관계로 설계하여 개별 배출량에 대한 집계 쿼리를 데이터베이스 수준에서 처리하도록 결정함.
+- **배출량 누적**: 중복 및 데이터 비대화를 방지하고 기존 누적 로직을 계승하기 위해 5개 식별 컬럼에 복합 유니크 제약조건을 설정하고 ON CONFLICT DO UPDATE(Upsert) 방식을 채택함.
+- **트랜잭션 원자성**: 배출량 기록과 포스트 작성을 하나의 DB 트랜잭션 내에서 처리하여 원자성을 확보하도록 결정함.
+- **시드 실행**: Next.js 실행 오버헤드를 막기 위해 `src/db/seed.ts` 스크립트를 작성하여 일회성으로 데이터를 삽입하는 구조를 설계함.
+- **데이터베이스 플랫폼 전환**: Supabase 프리 플랜 용량 제한 도달 이슈로 인하여, Drizzle ORM과 완벽히 호환되며 넉넉한 무료 티어(0.5GB 스토리지)를 지원하는 서버리스 PostgreSQL인 Neon으로 배포 데이터베이스를 변경하고 계획서 및 환경 변수를 업데이트함.
+
+- **2026-06-04 (마이그레이션 완료)**.
+  - Drizzle ORM 및 Neon Serverless PostgreSQL 실제 연동 완료.
+  - `countries`, `companies`, `emissions`, `posts` 테이블의 1:N 관계형 스키마 설계 및 마이그레이션 파일 생성/적용 완료.
+  - `src/db/seed.ts` 독립 실행형 스크립트로 2025-01부터 현재 전월까지의 기초 및 계산 데이터 삽입 완료.
+  - `src/lib/api.ts` 내부의 조회, 생성/수정, Upsert 및 트랜잭션 로직을 Drizzle 쿼리로 성공적으로 마이그레이션.
+  - `getDashboardStats` 집계 로직을 SQL Group By 및 SUM 연산으로 고도화 최적화하여 쿼리 성능 대폭 향상.
+  - `fake-db.test.ts` 및 `api.test.ts`를 실제 데이터베이스 연동 환경에 맞춰 개편하여 기존 37개 단위 테스트가 모두 안정적으로 통과함을 검증함.
+  - 더 이상 사용하지 않는 레거시 파일들(`fake-db.ts`, `emission-service.ts`, `country-data.ts`) 상단에 "더 이상 사용하지 않는 파일" 주석 표시 적용.
+
+- **2026-06-07 (트랜잭션 미지원 이슈 해결)**.
+  - Drizzle의 `neon-http` 드라이버 사용 시 HTTP의 무상태성 제약으로 인해 다중 쿼리 트랜잭션(`db.transaction`)이 미지원되는 버그(`No transactions support in neon-http driver`)가 관측됨.
+  - 이를 해결하기 위해 `@neondatabase/serverless`의 `Pool` 객체 및 `drizzle-orm/neon-serverless` WebSocket 기반 드라이버로 커넥션 연결 방식을 마이그레이션함.
+  - 전환 결과, 원자성이 필요한 `submitEmissions`를 포함하여 실제 트랜잭션 기능이 정상 작동하고 전체 38개 단위 테스트가 모두 무결하게 통과됨을 보장함.

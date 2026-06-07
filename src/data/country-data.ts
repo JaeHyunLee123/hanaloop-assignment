@@ -1,3 +1,4 @@
+// 더 이상 사용하지 않는 레거시 국가 더미 데이터 파일
 import { Country } from "@/types/base-types";
 
 export const countries: Country[] = [
