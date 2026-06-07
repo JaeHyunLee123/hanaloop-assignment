@@ -5,6 +5,7 @@ import {
   fetchCompanies,
   fetchPosts,
   createOrUpdatePost,
+  submitEmissions,
 } from "@/lib/api";
 
 describe("lib/api 모의 함수 테스트", () => {
@@ -46,5 +47,28 @@ describe("lib/api 모의 함수 테스트", () => {
     expect(result).toBeDefined();
     expect(result!.id).toBeDefined();
     expect(result!.title).toBe("테스트 포스트");
+  });
+
+  it("submitEmissions는 정상적으로 트랜잭션을 처리하고 포스트 목록을 반환해야 한다", async () => {
+    const payload = {
+      actionType: "guitar_production" as const,
+      quantity: 100,
+      yearMonth: "2026-06",
+    };
+
+    let result;
+    for (let i = 0; i < 10; i++) {
+      try {
+        result = await submitEmissions(payload);
+        break;
+      } catch (e) {
+        if ((e as Error).message.includes("No transactions support") || (e as Error).message.includes("transactions support")) {
+          throw e;
+        }
+      }
+    }
+
+    expect(result).toBeDefined();
+    expect(result!.length).toBeGreaterThan(0);
   });
 });

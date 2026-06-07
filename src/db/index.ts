@@ -1,9 +1,9 @@
-// 데이터베이스 연결 싱글톤 및 Neon 클라이언트 인스턴스화
+// 데이터베이스 연결 싱글톤 및 Neon WebSocket 클라이언트 인스턴스화
 import { config } from "dotenv";
 config({ path: ".env.local" });
 
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { Pool } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
 import * as schema from "./schema";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -13,10 +13,10 @@ if (!databaseUrl) {
 }
 
 const globalForDb = globalThis as unknown as {
-  conn: ReturnType<typeof neon> | undefined;
+  conn: Pool | undefined;
 };
 
-const conn = globalForDb.conn ?? neon(databaseUrl);
+const conn = globalForDb.conn ?? new Pool({ connectionString: databaseUrl });
 if (process.env.NODE_ENV !== "production") {
   globalForDb.conn = conn;
 }
