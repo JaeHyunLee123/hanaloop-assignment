@@ -86,7 +86,7 @@ describe("lib/api 모의 함수 테스트", () => {
       expect(lastMonth).toBe(`${currentYear}-${currentMonth}`);
     });
 
-    it.skip("startDate와 endDate 범위를 전달하면 해당 범위의 달만 오름차순 반환해야 한다", async () => {
+    it("startDate와 endDate 범위를 전달하면 해당 범위의 달만 오름차순 반환해야 한다", async () => {
       const startDate = "2026-01";
       const endDate = "2026-03";
       const stats = await getDashboardStats(startDate, endDate);
@@ -97,7 +97,7 @@ describe("lib/api 모의 함수 테스트", () => {
       expect(stats.emissionsByMonth[2].name).toBe("2026-03");
     });
 
-    it.skip("startDate만 전달할 경우 단일 월 데이터로 조회해야 한다 (하위 호환성)", async () => {
+    it("startDate만 전달할 경우 단일 월 데이터로 조회해야 한다 (하위 호환성)", async () => {
       const month = "2026-02";
       const stats = await getDashboardStats(month);
 
