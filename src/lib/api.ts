@@ -15,7 +15,7 @@ import {
   processGuitarStringImport,
 } from "./emissions-calculator";
 import { buildPostContent, PayloadItemType } from "./post-content-builder";
-import { eq, and, sql, sum } from "drizzle-orm";
+import { eq, and, sql, sum, gte, lte } from "drizzle-orm";
 import crypto from "crypto";
 
 export type PayloadActionType = "guitar_production" | "delivery" | "pickup_import" | "string_import";
@@ -244,14 +244,34 @@ const PCF_STAGE_NAMES: Record<number, string> = {
   5: "5단계: 제품 폐기",
 };
 
-export async function getDashboardStats(monthFilter?: string) {
+export async function getDashboardStats(startDate?: string, endDate?: string) {
   await delay(jitter());
+
+  // 기간 파라미터 파싱 및 디폴트 값 할당 (당월 포함 최근 12개월)
+  let start = startDate;
+  let end = endDate;
+
+  if (!start && !end) {
+    const now = new Date();
+    const endD = now;
+    const startD = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    
+    start = `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}`;
+    end = `${endD.getFullYear()}-${String(endD.getMonth() + 1).padStart(2, "0")}`;
+  } else if (start && !end) {
+    end = start;
+  } else if (!start && end) {
+    start = end;
+  }
+
+  const startMonth = start!;
+  const endMonth = end!;
 
   // 1. totalEmissions
   const [totalRes] = await db
     .select({ value: sum(emissionsTable.emissions) })
     .from(emissionsTable)
-    .where(monthFilter ? eq(emissionsTable.yearMonth, monthFilter) : undefined);
+    .where(and(gte(emissionsTable.yearMonth, startMonth), lte(emissionsTable.yearMonth, endMonth)));
   const totalEmissions = Number(totalRes?.value || 0);
 
   // 2. emissionsByScope
@@ -261,7 +281,7 @@ export async function getDashboardStats(monthFilter?: string) {
       value: sum(emissionsTable.emissions),
     })
     .from(emissionsTable)
-    .where(monthFilter ? eq(emissionsTable.yearMonth, monthFilter) : undefined)
+    .where(and(gte(emissionsTable.yearMonth, startMonth), lte(emissionsTable.yearMonth, endMonth)))
     .groupBy(emissionsTable.scope)
     .orderBy(emissionsTable.scope);
 
@@ -271,12 +291,11 @@ export async function getDashboardStats(monthFilter?: string) {
   }));
 
   // 3. emissionsByCompany
-  const joinCondition = monthFilter
-    ? and(
-        eq(companiesTable.id, emissionsTable.companyId),
-        eq(emissionsTable.yearMonth, monthFilter)
-      )
-    : eq(companiesTable.id, emissionsTable.companyId);
+  const joinCondition = and(
+    eq(companiesTable.id, emissionsTable.companyId),
+    gte(emissionsTable.yearMonth, startMonth),
+    lte(emissionsTable.yearMonth, endMonth)
+  );
 
   const companyRes = await db
     .select({
@@ -299,7 +318,7 @@ export async function getDashboardStats(monthFilter?: string) {
       value: sum(emissionsTable.emissions),
     })
     .from(emissionsTable)
-    .where(monthFilter ? eq(emissionsTable.yearMonth, monthFilter) : undefined)
+    .where(and(gte(emissionsTable.yearMonth, startMonth), lte(emissionsTable.yearMonth, endMonth)))
     .groupBy(emissionsTable.pcfStage)
     .orderBy(emissionsTable.pcfStage);
 
@@ -308,13 +327,14 @@ export async function getDashboardStats(monthFilter?: string) {
     value: Number(r.value || 0),
   }));
 
-  // 5. emissionsByMonth
+  // 5. emissionsByMonth (월별 차트 데이터 동적 생성)
   const monthlyRes = await db
     .select({
       yearMonth: emissionsTable.yearMonth,
       value: sum(emissionsTable.emissions),
     })
     .from(emissionsTable)
+    .where(and(gte(emissionsTable.yearMonth, startMonth), lte(emissionsTable.yearMonth, endMonth)))
     .groupBy(emissionsTable.yearMonth);
 
   const monthlyMap = new Map<string, number>();
@@ -324,17 +344,29 @@ export async function getDashboardStats(monthFilter?: string) {
     }
   }
 
-  const now = new Date();
-  const emissionsByMonth = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const key = `${y}-${m}`;
-    emissionsByMonth.push({ name: key, value: monthlyMap.get(key) || 0 });
+  // startDate부터 endDate까지의 모든 월을 YYYY-MM 배열로 도출
+  const targetMonths: string[] = [];
+  const [startYear, startM] = startMonth.split("-").map(Number);
+  const [endYear, endM] = endMonth.split("-").map(Number);
+  
+  let currYear = startYear;
+  let currMonth = startM;
+  
+  while (currYear < endYear || (currYear === endYear && currMonth <= endM)) {
+    targetMonths.push(`${currYear}-${String(currMonth).padStart(2, "0")}`);
+    currMonth++;
+    if (currMonth > 12) {
+      currMonth = 1;
+      currYear++;
+    }
   }
 
-  // Calculate static PCF per unit
+  const emissionsByMonth = targetMonths.map((m) => ({
+    name: m,
+    value: monthlyMap.get(m) || 0,
+  }));
+
+  // Calculate static PCF per unit (BOM & 배출계수 기준 이론값 유지)
   const stringStage1 =
     EMISSION_FACTORS.GUITAR_STRING_PRODUCTION_PER_UNIT *
     BOM.GUITAR_STRINGS_PER_GUITAR;

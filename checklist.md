@@ -17,6 +17,15 @@
 - [x] `submitEmissions` API 내의 배출 계산, Upsert 및 포스트 갱신을 단일 DB 트랜잭션으로 묶어 구현
 - [x] `getDashboardStats` 내의 집계 로직을 SQL Group By/SUM 혹은 Drizzle 관계형 쿼리로 최적화하여 구현
 
-## 검증 및 정리
-- [x] 테스트 코드 실행 및 검증 (`npm run test`)
-- [x] 사용되지 않는 더미 데이터 파일 정리
+## 대시보드 기간 필터링 기능 추가 (Phase 6)
+- [x] 1단계: 테스트 작성 (TDD Red 단계) - `src/lib/__tests__/api.test.ts` 등에 기간 필터링에 관한 단위 테스트 케이스 추가
+- [x] 2단계: API 엔드포인트 수정 - `src/app/api/dashboard-stats/route.ts`에 쿼리 파라미터 연동 및 하위 호환성 추가
+- [x] 3단계: DB 조회 로직 수정 - `src/lib/api.ts` 내 `getDashboardStats` 함수를 `startDate`와 `endDate` 범위 기반 쿼리로 리팩토링 및 동적 월별 차트 조회 구현
+- [x] 4단계: UI 개발 - `src/app/page.tsx`에 시작-종료 월 드롭다운 필터 및 유효성 검증 UI 개발
+- [x] 5단계: 최종 통합 검증 - 전체 단위 테스트 100% 통과 확인 및 프로덕션 빌드 성공 여부 검증
+
+## 대시보드 UI 개선 및 loading.tsx 로딩 스피너 구현 (추가 보완)
+- [x] Next.js 컨벤션에 맞춘 로딩 스피너 컴포넌트 추가 (`src/app/loading.tsx`)
+- [x] page.tsx 내의 Tanstack Query 패칭을 `useSuspenseQuery`로 전환 및 로딩 분기 정리
+- [x] page.tsx 상단 기간 필터 드롭다운 UI 크기(패딩 및 폰트) 확대 조정
+- [x] 전체 단위 테스트 100% 성공 검증 및 빌드 정상 완료 검증

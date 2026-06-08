@@ -1,7 +1,8 @@
 "use client";
 
 import { COLORS, DashboardStats } from "@/types/base-types";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -19,23 +20,109 @@ import {
 
 
 export default function DashboardPage() {
-  const { data, isLoading, error } = useQuery<DashboardStats>({
-    queryKey: ["dashboard-stats"],
+  const defaultDates = useMemo(() => {
+    const now = new Date();
+    const endD = now;
+    const startD = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    
+    return {
+      start: `${startD.getFullYear()}-${String(startD.getMonth() + 1).padStart(2, "0")}`,
+      end: `${endD.getFullYear()}-${String(endD.getMonth() + 1).padStart(2, "0")}`,
+    };
+  }, []);
+
+  const [startDate, setStartDate] = useState(defaultDates.start);
+  const [endDate, setEndDate] = useState(defaultDates.end);
+
+  const availableMonths = useMemo(() => {
+    const months = [];
+    const start = new Date(2025, 0, 1); // 2025-01
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const current = new Date(start);
+    while (current <= end) {
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, "0");
+      months.push(`${y}-${m}`);
+      current.setMonth(current.getMonth() + 1);
+    }
+    return months;
+  }, []);
+
+  const { data, error } = useSuspenseQuery<DashboardStats>({
+    queryKey: ["dashboard-stats", { startDate, endDate }],
     queryFn: async () => {
-      const res = await fetch("/api/dashboard-stats");
+      if (typeof window === "undefined") {
+        return {
+          totalEmissions: 0,
+          emissionsByScope: [],
+          emissionsByCompany: [],
+          emissionsByPcfStage: [],
+          emissionsByMonth: [],
+          cradleToGatePcf: 0,
+          cradleToGravePcf: 0,
+        };
+      }
+      const params = new URLSearchParams();
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+      const queryStr = params.toString();
+      const url = `/api/dashboard-stats${queryStr ? `?${queryStr}` : ""}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to fetch dashboard stats");
       return res.json();
     },
   });
 
-  if (isLoading) return <div className="p-8 text-foreground">Loading dashboard...</div>;
   if (error || !data) return <div className="p-8 text-red-400">Error loading dashboard</div>;
 
   return (
     <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Kender Dashboard</h1>
-        <p className="text-gray-400 mt-2">Comprehensive carbon emission analytics</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Kender Dashboard</h1>
+          <p className="text-gray-400 mt-2">Comprehensive carbon emission analytics</p>
+        </div>
+        
+        {/* 기간 필터 컨트롤러 */}
+        <div className="flex items-center gap-4 bg-surface p-4 sm:p-5 rounded-2xl border border-border self-start sm:self-auto shadow-lg">
+          <div className="flex flex-col">
+            <span className="text-xs sm:text-sm text-gray-400 font-semibold mb-1.5">시작 월</span>
+            <select
+              value={startDate}
+              onChange={(e) => {
+                const val = e.target.value;
+                setStartDate(val);
+                if (endDate && val > endDate) {
+                  setEndDate(val);
+                }
+              }}
+              className="bg-background text-foreground border border-border rounded-lg px-4 py-2.5 text-sm sm:text-base font-medium focus:outline-none focus:border-primary cursor-pointer hover:border-gray-500 transition-colors"
+            >
+              {availableMonths.map((m) => (
+                <option key={`start-${m}`} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+          <span className="text-gray-400 font-bold self-end mb-3 text-lg">~</span>
+          <div className="flex flex-col">
+            <span className="text-xs sm:text-sm text-gray-400 font-semibold mb-1.5">종료 월</span>
+            <select
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-background text-foreground border border-border rounded-lg px-4 py-2.5 text-sm sm:text-base font-medium focus:outline-none focus:border-primary cursor-pointer hover:border-gray-500 transition-colors"
+            >
+              {availableMonths.map((m) => (
+                <option key={`end-${m}`} value={m} disabled={m < startDate}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Top Cards */}
@@ -136,7 +223,9 @@ export default function DashboardPage() {
 
         {/* Monthly Emissions Chart */}
         <div className="bg-surface rounded-xl p-6 border border-border h-96 flex flex-col lg:col-span-2">
-          <h3 className="text-lg font-medium text-foreground mb-4">Monthly Emissions (Last 12 Months)</h3>
+          <h3 className="text-lg font-medium text-foreground mb-4">
+            Monthly Emissions ({startDate && endDate ? `${startDate} ~ ${endDate}` : "Last 12 Months"})
+          </h3>
           <div className="flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.emissionsByMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
