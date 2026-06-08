@@ -6,7 +6,9 @@ import {
   fetchPosts,
   createOrUpdatePost,
   submitEmissions,
+  getDashboardStats,
 } from "@/lib/api";
+
 
 describe("lib/api 모의 함수 테스트", () => {
   it("fetchCountries는 배열을 반환해야 한다", async () => {
@@ -70,5 +72,37 @@ describe("lib/api 모의 함수 테스트", () => {
 
     expect(result).toBeDefined();
     expect(result!.length).toBeGreaterThan(0);
+  });
+
+  describe("getDashboardStats 기간 필터링 테스트", () => {
+    it("인자 없이 호출 시 디폴트로 최근 12개월 데이터를 반환해야 한다", async () => {
+      const stats = await getDashboardStats();
+      expect(stats.emissionsByMonth).toHaveLength(12);
+
+      const now = new Date();
+      const lastMonth = stats.emissionsByMonth[11].name;
+      const currentYear = now.getFullYear();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, "0");
+      expect(lastMonth).toBe(`${currentYear}-${currentMonth}`);
+    });
+
+    it.skip("startDate와 endDate 범위를 전달하면 해당 범위의 달만 오름차순 반환해야 한다", async () => {
+      const startDate = "2026-01";
+      const endDate = "2026-03";
+      const stats = await getDashboardStats(startDate, endDate);
+
+      expect(stats.emissionsByMonth).toHaveLength(3);
+      expect(stats.emissionsByMonth[0].name).toBe("2026-01");
+      expect(stats.emissionsByMonth[1].name).toBe("2026-02");
+      expect(stats.emissionsByMonth[2].name).toBe("2026-03");
+    });
+
+    it.skip("startDate만 전달할 경우 단일 월 데이터로 조회해야 한다 (하위 호환성)", async () => {
+      const month = "2026-02";
+      const stats = await getDashboardStats(month);
+
+      expect(stats.emissionsByMonth).toHaveLength(1);
+      expect(stats.emissionsByMonth[0].name).toBe("2026-02");
+    });
   });
 });

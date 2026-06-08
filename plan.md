@@ -1,38 +1,41 @@
-# 구현 계획: Drizzle ORM 및 Neon 연동을 통한 실제 API 전환
+# 구현 계획: 대시보드 기간 필터링 기능 추가 및 고도화 (Phase 6)
 
 ## 목표
-기존 메모리 기반의 더미 API(`src/lib/api.ts` 및 `src/lib/fake-db.ts`)를 Drizzle ORM과 Neon PostgreSQL을 연동한 실제 데이터베이스 기반 API 코드로 전환합니다. 이를 통해 영속성, 데이터 정속성, 트랜잭션 안전성을 확보합니다.
+* 사용자가 시작 월(`startDate`)과 종료 월(`endDate`)을 지정하여 원하는 기간 동안의 탄소 배출량을 분석할 수 있는 화면 제공.
+* 기본값(Default)으로는 현재 시간 기준 최근 12개월(당월 포함) 동안의 데이터를 제공.
+* 유효하지 않은 기간 입력을 프론트엔드 UI 수준에서 원천 차단하는 유효성 검증 제공.
+* 기존 API와의 완벽한 하위 호환성 유지.
 
 ## 세부 구현 단계
 
-### 1. 패키지 설치 및 환경 설정
-* Drizzle ORM과 Neon PostgreSQL 연결용 서버리스 드라이버를 설치합니다.
-* 개발 도구로 `drizzle-kit`과 `tsx`를 추가합니다.
-* `.env.local` 환경 변수 파일에 Neon 커넥션 주소(`DATABASE_URL`)를 정의합니다.
+### 1. 테스트 케이스 작성 및 TDD 환경 마련 (Red 단계)
+* `src/lib/__tests__/api.test.ts`에 `getDashboardStats` 함수에 대한 범위 쿼리 테스트 추가.
+  * `startDate`와 `endDate` 범위에 맞는 데이터만 올바르게 집계되는지 확인.
+  * `startDate`와 `endDate` 사이의 기간 동안의 `emissionsByMonth` 차트 데이터가 동적으로 오름차순 생성되는지 확인.
+  * 인자가 전달되지 않은 경우, 현재 실제 시간 기준 최근 12개월 범위가 적용되는지 검증.
 
-### 2. Drizzle DB 스키마 정의 및 설정
-* `src/db/schema.ts` 파일을 생성하여 `countries`, `companies`, `emissions`, `posts` 테이블의 관계와 스키마를 정의합니다.
-* `emissions` 테이블에는 `(company_id, year_month, source, scope, pcf_stage)` 복합 유니크 제약조건을 정의하여 중복 적재를 방지합니다.
-* `drizzle.config.ts` 파일을 설정하여 스키마 경로와 마이그레이션 폴더 정보를 정의합니다.
+### 2. DB 조회 로직 수정 및 범위 쿼리 반영
+* `src/lib/api.ts` 내 `getDashboardStats` 함수 시그니처를 `getDashboardStats(startDate?: string, endDate?: string)`로 확장.
+* `startDate`와 `endDate` 중 하나라도 누락된 경우, 현재 날짜 기준 당월 포함 12개월 범위로 자동 계산하여 할당.
+* Drizzle ORM의 `and(gte(emissionsTable.yearMonth, startDate), lte(emissionsTable.yearMonth, endDate))` 조건문을 활용하여 통계 집계 쿼리에 적용.
+* `emissionsByMonth` (월별 차트 데이터)도 `startDate`와 `endDate` 사이의 개별 연월 목록을 오름차순으로 동적 조회하도록 수정.
 
-### 3. 데이터베이스 커넥션 설정
-* `src/db/index.ts` 파일을 생성하여 Next.js의 개발 모드 핫 리로드(Hot-reload) 시 연결 인스턴스가 중복 생성되는 문제를 방지하는 글로벌 커넥션 풀을 구현합니다.
+### 3. API 엔드포인트 수정 및 하위 호환성 구현
+* `src/app/api/dashboard-stats/route.ts`가 `startDate`와 `endDate` 쿼리 파라미터를 읽어오도록 수정.
+* `month` 쿼리 파라미터가 들어오는 경우, `startDate = month`, `endDate = month`로 매핑하여 하위 호환성 제공.
+* 쿼리 파라미터가 없거나 올바르지 않은 경우 `getDashboardStats()`의 디폴트 로직이 동작하도록 연동.
 
-### 4. 스키마 마이그레이션 실행
-* Drizzle Kit 명령어를 사용하여 작성된 스키마를 기반으로 마이그레이션 SQL을 생성하고 Neon 데이터베이스에 반영합니다.
+### 4. 대시보드 프론트엔드 UI/UX 개발
+* `src/app/page.tsx`에 대시보드 상단 기간 필터 2개(시작 월, 종료 월) 연월 드롭다운 배치.
+* 시작 월은 시드 데이터 시작 시점인 `2025-01`부터 현재 월까지, 종료 월도 동일하게 빌드.
+* 유효성 검증: 시작 월보다 이른 연월 항목들은 종료 월 드롭다운에서 `disabled` 처리하여 비정상 조회를 차단.
+* Tanstack Query의 `queryKey`에 `[ "dashboard-stats", { startDate, endDate } ]` 형태로 연동하여 상태 변화 시 즉각 갱신.
 
-### 5. 독립형 시드 스크립트 작성 및 실행
-* `src/db/seed.ts` 파일을 작성합니다. 기존 `src/lib/fake-db.ts`의 시드 로직(2025-01부터 현재 전월까지의 데이터 생성 및 누적 계산 파이프라인)을 그대로 포팅하여 데이터베이스에 적재합니다.
-* `tsx` 실행기를 사용하여 일회성으로 DB를 초기화하고 데이터를 채웁니다.
-
-### 6. 실제 API 코드 구현 (`src/lib/api.ts` 전환)
-* `fetchCountries`, `fetchCompanies`, `fetchPosts`, `createOrUpdatePost`, `submitEmissions`, `getDashboardStats` 함수를 Drizzle ORM 쿼리로 재작성합니다.
-* `submitEmissions` 호출 시 계산된 배출량을 `emissions` 테이블에 복합 유니크 제약조건을 이용해 Upsert(합산)하고, 포스트는 동일 월/회사 기준으로 덧붙이거나 신규 생성하는 전체 과정을 **단일 트랜잭션**으로 처리합니다.
-* `getDashboardStats`에서는 모든 집계(Scope별, PCF 단계별, 회사별, 월별)를 인메모리 루프 대신 SQL의 Group By 및 SUM 연산 혹은 Drizzle 관계형 쿼리를 활용하도록 리팩토링합니다.
-
-### 7. 테스트 코드 검증
-* 기존의 인메모리 DB 전제 테스트 코드를 파악하고, 실제 데이터베이스 연결 상황에 알맞게 수정하거나 테스트 환경을 검증합니다.
+### 5. 빌드 및 최종 통합 검증 (Green 단계)
+* `npm run test`를 실행하여 기존 38개 테스트와 새로 추가된 테스트가 100% 통과하는지 검증.
+* 프로젝트가 성공적으로 빌드되는지 `npm run build`를 통해 빌드 검증 수행.
 
 ## 제약 사항
-* 기존 프론트엔드 코드와의 타입 호환성을 위해 API 반환 객체 구조 및 기존 타입 정의(`Country`, `Company`, `Post` 등)를 그대로 유지합니다.
-* 한국어 주석으로 파일 첫 줄에 설명(Header Comment)을 작성합니다.
+* 한국어 문장 끝에 콜론(`:`)을 사용하지 않고 온점(`.`) 등을 사용합니다.
+* 새로 수정하는 파일 상단에는 1줄의 한국어 주석으로 파일 역할을 설명합니다.
+* 기능 단위마다 Semantic Commit 규칙에 맞추어 세분화된 커밋을 수행합니다.

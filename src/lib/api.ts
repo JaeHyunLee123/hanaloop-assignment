@@ -244,8 +244,16 @@ const PCF_STAGE_NAMES: Record<number, string> = {
   5: "5단계: 제품 폐기",
 };
 
-export async function getDashboardStats(monthFilter?: string) {
+export async function getDashboardStats(startDate?: string, endDate?: string) {
   await delay(jitter());
+
+  // 하위 호환성: startDate만 주어지고 endDate가 없는 경우 단일 월로 매핑
+  let monthFilter = startDate;
+  if (startDate && !endDate) {
+    monthFilter = startDate;
+  } else if (!startDate && endDate) {
+    monthFilter = endDate;
+  }
 
   // 1. totalEmissions
   const [totalRes] = await db

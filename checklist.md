@@ -17,10 +17,9 @@
 - [x] `submitEmissions` API 내의 배출 계산, Upsert 및 포스트 갱신을 단일 DB 트랜잭션으로 묶어 구현
 - [x] `getDashboardStats` 내의 집계 로직을 SQL Group By/SUM 혹은 Drizzle 관계형 쿼리로 최적화하여 구현
 
-## 대시보드 기간 필터링 기능 추가
-- [ ] API 스펙 확장 및 구현 (`src/app/api/dashboard-stats/route.ts`)
-- [ ] DB 조회 로직 수정 (`src/lib/api.ts` 내 `getDashboardStats`)
-- [ ] 디폴트 기간(최근 12개월) 자동 계산 및 필터 예외 처리 구현
-- [ ] 대시보드 프론트엔드 UI/UX 개발 (기간 필터 컨트롤러 추가, `src/app/page.tsx`)
-- [ ] API 및 쿼리 파라미터 연동 테스트 코드 작성 및 검증
-
+## 대시보드 기간 필터링 기능 추가 (Phase 6)
+- [ ] 1단계: 테스트 작성 (TDD Red 단계) - `src/lib/__tests__/api.test.ts` 등에 기간 필터링에 관한 단위 테스트 케이스 추가
+- [ ] 2단계: API 엔드포인트 수정 - `src/app/api/dashboard-stats/route.ts`에 쿼리 파라미터 연동 및 하위 호환성 추가
+- [ ] 3단계: DB 조회 로직 수정 - `src/lib/api.ts` 내 `getDashboardStats` 함수를 `startDate`와 `endDate` 범위 기반 쿼리로 리팩토링 및 동적 월별 차트 조회 구현
+- [ ] 4단계: UI 개발 - `src/app/page.tsx`에 시작-종료 월 드롭다운 필터 및 유효성 검증 UI 개발
+- [ ] 5단계: 최종 통합 검증 - 전체 단위 테스트 100% 통과 확인 및 프로덕션 빌드 성공 여부 검증
