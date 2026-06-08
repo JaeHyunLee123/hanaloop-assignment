@@ -15,5 +15,7 @@
   * Playwright를 이용해 전체 워크플로우(입력 -> 백엔드 분배 -> 대시보드 갱신) 검증.
 * [Phase 5: Drizzle ORM 및 Neon 연동 실제 API 마이그레이션](./05-drizzle-neon-migration.md)
   * Neon PostgreSQL 연동, Drizzle 스키마 설계 및 독립형 시드 스크립트 구축, 그리고 기존 페이크 API의 실제 DB 쿼리 및 트랜잭션 전환.
+* [Phase 6: 대시보드 기간 필터링 기능 추가 및 고도화](./06-dashboard-period-filter.md)
+  * 시작 월 및 종료 월 기간 범위 쿼리 파라미터 연동, 대시보드 UI/UX 구현, 범위 유효성 검증 및 하위 호환성 유지.
 
 
