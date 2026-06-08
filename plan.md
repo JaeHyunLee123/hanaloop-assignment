@@ -1,41 +1,27 @@
-# 구현 계획: 대시보드 기간 필터링 기능 추가 및 고도화 (Phase 6)
+# 구현 계획: 대시보드 UI 개선 및 loading.tsx 로딩 스피너 구현 (Phase 6 추가 보완)
 
 ## 목표
-* 사용자가 시작 월(`startDate`)과 종료 월(`endDate`)을 지정하여 원하는 기간 동안의 탄소 배출량을 분석할 수 있는 화면 제공.
-* 기본값(Default)으로는 현재 시간 기준 최근 12개월(당월 포함) 동안의 데이터를 제공.
-* 유효하지 않은 기간 입력을 프론트엔드 UI 수준에서 원천 차단하는 유효성 검증 제공.
-* 기존 API와의 완벽한 하위 호환성 유지.
+* 대시보드 상단 날짜 필터 UI의 크기를 키워 사용자 가독성과 클릭 편의성을 대폭 향상.
+* Next.js의 `loading.tsx` 컨벤션을 적용하여 큼직하고 세련된 로딩 스피너 UI 구축.
+* Tanstack Query의 `useQuery`를 `useSuspenseQuery`로 전환하여, 필터 조작이나 최초 진입 시 로딩 상태가 Next.js의 서스펜스 및 `loading.tsx`와 자연스럽게 유기적으로 동작하도록 연동.
 
 ## 세부 구현 단계
 
-### 1. 테스트 케이스 작성 및 TDD 환경 마련 (Red 단계)
-* `src/lib/__tests__/api.test.ts`에 `getDashboardStats` 함수에 대한 범위 쿼리 테스트 추가.
-  * `startDate`와 `endDate` 범위에 맞는 데이터만 올바르게 집계되는지 확인.
-  * `startDate`와 `endDate` 사이의 기간 동안의 `emissionsByMonth` 차트 데이터가 동적으로 오름차순 생성되는지 확인.
-  * 인자가 전달되지 않은 경우, 현재 실제 시간 기준 최근 12개월 범위가 적용되는지 검증.
+### 1. loading.tsx 로딩 스피너 컴포넌트 개발
+* `src/app/loading.tsx` 파일 신규 생성.
+* 첫 라인에 한국어 주석으로 역할 설명 명시.
+* Tailwind CSS를 활용해 모던하고 큼직한 애니메이션 스피너 컴포넌트 마크업.
+* Glassmorphism 및 플랫폼의 메인 색상 톤(Primary/Surface)에 부합하는 고급스러운 디자인 적용.
 
-### 2. DB 조회 로직 수정 및 범위 쿼리 반영
-* `src/lib/api.ts` 내 `getDashboardStats` 함수 시그니처를 `getDashboardStats(startDate?: string, endDate?: string)`로 확장.
-* `startDate`와 `endDate` 중 하나라도 누락된 경우, 현재 날짜 기준 당월 포함 12개월 범위로 자동 계산하여 할당.
-* Drizzle ORM의 `and(gte(emissionsTable.yearMonth, startDate), lte(emissionsTable.yearMonth, endDate))` 조건문을 활용하여 통계 집계 쿼리에 적용.
-* `emissionsByMonth` (월별 차트 데이터)도 `startDate`와 `endDate` 사이의 개별 연월 목록을 오름차순으로 동적 조회하도록 수정.
+### 2. page.tsx 내 데이터 패칭 리팩토링 및 UI 조정
+* `src/app/page.tsx`에서 `@tanstack/react-query`의 `useQuery`를 `useSuspenseQuery`로 교체.
+* 이에 맞춰 로딩 상태 체크 분기문(`if (isLoading) ...`)은 React Suspense와 `loading.tsx`가 처리하므로 컴포넌트 내부에서 제거하여 단순화.
+* 날짜 필터 영역의 각 드롭다운 요소(`select` 및 `span` 등)의 패딩, 폰트 크기, 영역 높이를 상향 조정하여 직관적이고 시원한 레이아웃 제공.
 
-### 3. API 엔드포인트 수정 및 하위 호환성 구현
-* `src/app/api/dashboard-stats/route.ts`가 `startDate`와 `endDate` 쿼리 파라미터를 읽어오도록 수정.
-* `month` 쿼리 파라미터가 들어오는 경우, `startDate = month`, `endDate = month`로 매핑하여 하위 호환성 제공.
-* 쿼리 파라미터가 없거나 올바르지 않은 경우 `getDashboardStats()`의 디폴트 로직이 동작하도록 연동.
-
-### 4. 대시보드 프론트엔드 UI/UX 개발
-* `src/app/page.tsx`에 대시보드 상단 기간 필터 2개(시작 월, 종료 월) 연월 드롭다운 배치.
-* 시작 월은 시드 데이터 시작 시점인 `2025-01`부터 현재 월까지, 종료 월도 동일하게 빌드.
-* 유효성 검증: 시작 월보다 이른 연월 항목들은 종료 월 드롭다운에서 `disabled` 처리하여 비정상 조회를 차단.
-* Tanstack Query의 `queryKey`에 `[ "dashboard-stats", { startDate, endDate } ]` 형태로 연동하여 상태 변화 시 즉각 갱신.
-
-### 5. 빌드 및 최종 통합 검증 (Green 단계)
-* `npm run test`를 실행하여 기존 38개 테스트와 새로 추가된 테스트가 100% 통과하는지 검증.
-* 프로젝트가 성공적으로 빌드되는지 `npm run build`를 통해 빌드 검증 수행.
+### 3. 빌드 및 테스트 재검증
+* `npm run test`를 실행하여 컴포넌트 구조 변경에 의한 사이드 이펙트나 테스트 깨짐이 없는지 검증.
+* `npm run build`를 실행하여 타입 체킹, 린터 에러 및 빌드 무결성 재확인.
 
 ## 제약 사항
-* 한국어 문장 끝에 콜론(`:`)을 사용하지 않고 온점(`.`) 등을 사용합니다.
-* 새로 수정하는 파일 상단에는 1줄의 한국어 주석으로 파일 역할을 설명합니다.
-* 기능 단위마다 Semantic Commit 규칙에 맞추어 세분화된 커밋을 수행합니다.
+* 한국어 문장 끝에 콜론(`:`)을 배제하고 온점(`.`) 등을 사용합니다.
+* 새로 생성하는 `src/app/loading.tsx` 상단에 1줄 한국어 주석을 작성합니다.
