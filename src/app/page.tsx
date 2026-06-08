@@ -40,7 +40,7 @@ export default function DashboardPage() {
     const now = new Date();
     const end = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    let current = new Date(start);
+    const current = new Date(start);
     while (current <= end) {
       const y = current.getFullYear();
       const m = String(current.getMonth() + 1).padStart(2, "0");

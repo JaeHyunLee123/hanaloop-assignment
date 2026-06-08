@@ -1,5 +1,5 @@
-// lib/api.ts의 모의 함수 동작을 검증하는 테스트
 import { describe, it, expect } from "vitest";
+import { GET as getDashboardStatsRoute } from "@/app/api/dashboard-stats/route";
 import {
   fetchCountries,
   fetchCompanies,
@@ -103,6 +103,51 @@ describe("lib/api 모의 함수 테스트", () => {
 
       expect(stats.emissionsByMonth).toHaveLength(1);
       expect(stats.emissionsByMonth[0].name).toBe("2026-02");
+    });
+  });
+
+  describe("GET /api/dashboard-stats API 라우트 통합 테스트", () => {
+    it("startDate와 endDate 파라미터로 범위 조회 시 올바른 데이터를 JSON 형태로 반환해야 한다", async () => {
+      const req = new Request("http://localhost/api/dashboard-stats?startDate=2026-01&endDate=2026-02");
+      
+      let response;
+      for (let i = 0; i < 10; i++) {
+        try {
+          response = await getDashboardStatsRoute(req);
+          break;
+        } catch {
+          // retry due to jitter/maybeFail
+        }
+      }
+
+      expect(response).toBeDefined();
+      expect(response!.status).toBe(200);
+      
+      const data = await response!.json();
+      expect(data.emissionsByMonth).toHaveLength(2);
+      expect(data.emissionsByMonth[0].name).toBe("2026-01");
+      expect(data.emissionsByMonth[1].name).toBe("2026-02");
+    });
+
+    it("month 단일 파라미터로 단일 월 조회 시 하위 호환성을 제공해야 한다", async () => {
+      const req = new Request("http://localhost/api/dashboard-stats?month=2026-03");
+      
+      let response;
+      for (let i = 0; i < 10; i++) {
+        try {
+          response = await getDashboardStatsRoute(req);
+          break;
+        } catch {
+          // retry
+        }
+      }
+
+      expect(response).toBeDefined();
+      expect(response!.status).toBe(200);
+      
+      const data = await response!.json();
+      expect(data.emissionsByMonth).toHaveLength(1);
+      expect(data.emissionsByMonth[0].name).toBe("2026-03");
     });
   });
 });
