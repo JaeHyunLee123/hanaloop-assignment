@@ -1,7 +1,7 @@
 "use client";
 
 import { COLORS, DashboardStats } from "@/types/base-types";
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import {
   BarChart,
@@ -50,9 +50,20 @@ export default function DashboardPage() {
     return months;
   }, []);
 
-  const { data, isLoading, error } = useQuery<DashboardStats>({
+  const { data, error } = useSuspenseQuery<DashboardStats>({
     queryKey: ["dashboard-stats", { startDate, endDate }],
     queryFn: async () => {
+      if (typeof window === "undefined") {
+        return {
+          totalEmissions: 0,
+          emissionsByScope: [],
+          emissionsByCompany: [],
+          emissionsByPcfStage: [],
+          emissionsByMonth: [],
+          cradleToGatePcf: 0,
+          cradleToGravePcf: 0,
+        };
+      }
       const params = new URLSearchParams();
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
@@ -64,7 +75,6 @@ export default function DashboardPage() {
     },
   });
 
-  if (isLoading) return <div className="p-8 text-foreground">Loading dashboard...</div>;
   if (error || !data) return <div className="p-8 text-red-400">Error loading dashboard</div>;
 
   return (
@@ -76,9 +86,9 @@ export default function DashboardPage() {
         </div>
         
         {/* 기간 필터 컨트롤러 */}
-        <div className="flex items-center gap-2 bg-surface p-3 rounded-xl border border-border self-start sm:self-auto">
+        <div className="flex items-center gap-4 bg-surface p-4 sm:p-5 rounded-2xl border border-border self-start sm:self-auto shadow-lg">
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-medium mb-1">시작 월</span>
+            <span className="text-xs sm:text-sm text-gray-400 font-semibold mb-1.5">시작 월</span>
             <select
               value={startDate}
               onChange={(e) => {
@@ -88,7 +98,7 @@ export default function DashboardPage() {
                   setEndDate(val);
                 }
               }}
-              className="bg-background text-foreground border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-primary"
+              className="bg-background text-foreground border border-border rounded-lg px-4 py-2.5 text-sm sm:text-base font-medium focus:outline-none focus:border-primary cursor-pointer hover:border-gray-500 transition-colors"
             >
               {availableMonths.map((m) => (
                 <option key={`start-${m}`} value={m}>
@@ -97,13 +107,13 @@ export default function DashboardPage() {
               ))}
             </select>
           </div>
-          <span className="text-gray-400 self-end mb-2">~</span>
+          <span className="text-gray-400 font-bold self-end mb-3 text-lg">~</span>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-medium mb-1">종료 월</span>
+            <span className="text-xs sm:text-sm text-gray-400 font-semibold mb-1.5">종료 월</span>
             <select
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="bg-background text-foreground border border-border rounded px-2 py-1 text-sm focus:outline-none focus:border-primary"
+              className="bg-background text-foreground border border-border rounded-lg px-4 py-2.5 text-sm sm:text-base font-medium focus:outline-none focus:border-primary cursor-pointer hover:border-gray-500 transition-colors"
             >
               {availableMonths.map((m) => (
                 <option key={`end-${m}`} value={m} disabled={m < startDate}>

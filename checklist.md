@@ -23,3 +23,9 @@
 - [x] 3단계: DB 조회 로직 수정 - `src/lib/api.ts` 내 `getDashboardStats` 함수를 `startDate`와 `endDate` 범위 기반 쿼리로 리팩토링 및 동적 월별 차트 조회 구현
 - [x] 4단계: UI 개발 - `src/app/page.tsx`에 시작-종료 월 드롭다운 필터 및 유효성 검증 UI 개발
 - [x] 5단계: 최종 통합 검증 - 전체 단위 테스트 100% 통과 확인 및 프로덕션 빌드 성공 여부 검증
+
+## 대시보드 UI 개선 및 loading.tsx 로딩 스피너 구현 (추가 보완)
+- [x] Next.js 컨벤션에 맞춘 로딩 스피너 컴포넌트 추가 (`src/app/loading.tsx`)
+- [x] page.tsx 내의 Tanstack Query 패칭을 `useSuspenseQuery`로 전환 및 로딩 분기 정리
+- [x] page.tsx 상단 기간 필터 드롭다운 UI 크기(패딩 및 폰트) 확대 조정
+- [x] 전체 단위 테스트 100% 성공 검증 및 빌드 정상 완료 검증
