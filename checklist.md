@@ -18,8 +18,8 @@
 - [x] `getDashboardStats` 내의 집계 로직을 SQL Group By/SUM 혹은 Drizzle 관계형 쿼리로 최적화하여 구현
 
 ## 대시보드 기간 필터링 기능 추가 (Phase 6)
-- [ ] 1단계: 테스트 작성 (TDD Red 단계) - `src/lib/__tests__/api.test.ts` 등에 기간 필터링에 관한 단위 테스트 케이스 추가
-- [ ] 2단계: API 엔드포인트 수정 - `src/app/api/dashboard-stats/route.ts`에 쿼리 파라미터 연동 및 하위 호환성 추가
-- [ ] 3단계: DB 조회 로직 수정 - `src/lib/api.ts` 내 `getDashboardStats` 함수를 `startDate`와 `endDate` 범위 기반 쿼리로 리팩토링 및 동적 월별 차트 조회 구현
-- [ ] 4단계: UI 개발 - `src/app/page.tsx`에 시작-종료 월 드롭다운 필터 및 유효성 검증 UI 개발
-- [ ] 5단계: 최종 통합 검증 - 전체 단위 테스트 100% 통과 확인 및 프로덕션 빌드 성공 여부 검증
+- [x] 1단계: 테스트 작성 (TDD Red 단계) - `src/lib/__tests__/api.test.ts` 등에 기간 필터링에 관한 단위 테스트 케이스 추가
+- [x] 2단계: API 엔드포인트 수정 - `src/app/api/dashboard-stats/route.ts`에 쿼리 파라미터 연동 및 하위 호환성 추가
+- [x] 3단계: DB 조회 로직 수정 - `src/lib/api.ts` 내 `getDashboardStats` 함수를 `startDate`와 `endDate` 범위 기반 쿼리로 리팩토링 및 동적 월별 차트 조회 구현
+- [x] 4단계: UI 개발 - `src/app/page.tsx`에 시작-종료 월 드롭다운 필터 및 유효성 검증 UI 개발
+- [x] 5단계: 최종 통합 검증 - 전체 단위 테스트 100% 통과 확인 및 프로덕션 빌드 성공 여부 검증
